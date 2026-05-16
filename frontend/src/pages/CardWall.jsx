@@ -37,53 +37,51 @@ export default function CardWall() {
   }))
 
   return (
-    <div>
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-tiffany via-tiffany to-tiffany-dark px-5 pt-8 pb-14">
-        <div className="absolute -right-8 -top-8 text-[140px] opacity-15 select-none">♠</div>
-        <div className="absolute right-16 top-20 text-[90px] opacity-10 select-none">♥</div>
-        <div className="relative max-w-screen-md mx-auto">
+    <div className="overflow-x-hidden">
+      {/* Hero(搜索条作为 hero 内部最后一块,避免负边距层叠遮挡) */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-tiffany via-tiffany to-tiffany-dark px-5 pt-8 pb-6">
+        <div className="pointer-events-none absolute -right-10 -top-10 text-[150px] leading-none opacity-10 select-none z-0">♠</div>
+        <div className="pointer-events-none absolute -right-4 bottom-2 text-[80px] leading-none opacity-10 select-none z-0">♦</div>
+
+        <div className="relative z-10 max-w-screen-md mx-auto">
           <h1 className="text-2xl font-extrabold text-tiffany-deep">我们的王牌</h1>
           <p className="mt-1 text-sm text-tiffany-deep/80">
             中山职业技术学院 20 周年 · 52 位创业校友珍藏扑克
           </p>
-          <div className="mt-4 flex gap-4 text-tiffany-deep">
+          <div className="mt-4 flex gap-5 text-tiffany-deep">
             <div>
               <div className="text-xl font-bold">{cards.length || 52}</div>
               <div className="text-[11px] opacity-75">校友牌</div>
             </div>
-            <div className="border-l border-tiffany-deep/20 pl-4">
+            <div className="border-l border-tiffany-deep/20 pl-5">
               <div className="text-xl font-bold">4</div>
               <div className="text-[11px] opacity-75">行业花色</div>
             </div>
           </div>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              load(q)
+            }}
+            className="mt-5 flex gap-2 bg-white rounded-full shadow-card p-1.5"
+          >
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="搜索校友姓名 / 公司 / 创业项目"
+              className="flex-1 min-w-0 px-4 py-2 rounded-full text-sm bg-transparent
+                         outline-none placeholder:text-slate-400 text-tiffany-deep"
+            />
+            <button
+              className="shrink-0 px-5 py-2 rounded-full text-sm font-semibold
+                         bg-tiffany text-tiffany-deep hover:bg-tiffany-dark transition"
+            >
+              搜索
+            </button>
+          </form>
         </div>
       </section>
-
-      {/* 搜索条(上浮覆盖 hero 底部) */}
-      <div className="max-w-screen-md mx-auto px-4 -mt-7">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            load(q)
-          }}
-          className="flex gap-2 bg-white rounded-full shadow-card p-1.5"
-        >
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="搜索校友姓名 / 公司 / 创业项目"
-            className="flex-1 px-4 py-2 rounded-full text-sm bg-transparent
-                       outline-none placeholder:text-slate-400"
-          />
-          <button
-            className="px-5 py-2 rounded-full text-sm font-semibold
-                       bg-tiffany text-tiffany-deep hover:bg-tiffany-dark transition"
-          >
-            搜索
-          </button>
-        </form>
-      </div>
 
       {/* 牌墙 */}
       <div className="max-w-screen-md mx-auto px-4 mt-6">
@@ -109,7 +107,7 @@ export default function CardWall() {
               {g.items.length === 0 ? (
                 <p className="text-xs text-slate-400 pl-4">无匹配结果</p>
               ) : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
                   {g.items.map((c, i) => (
                     <PokerCard key={c.card_key} card={c} index={i} />
                   ))}
