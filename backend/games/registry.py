@@ -24,6 +24,43 @@ def discover_games():
     return games
 
 
+def get_game_config(game_id):
+    """按 game_id 读取其 config.json,不存在返回 None。"""
+    cfg_file = os.path.join(GAMES_DIR, game_id, "config.json")
+    if not os.path.exists(cfg_file):
+        return None
+    with open(cfg_file, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def sync_games_to_db(app):
+    """把发现的插件 upsert 到 games 表。
+
+    新游戏按 config.json 的 enabled 落库;已存在的保留 DB 中 is_enabled
+    (上下架由管理员后台控制,不被代码覆盖)。
+    """
+    from extensions import db
+    from models import Game
+
+    for game_id, config in discover_games():
+        row = Game.query.filter_by(game_id=game_id).first()
+        if row is None:
+            db.session.add(Game(
+                game_id=game_id,
+                name=config.get("name", game_id),
+                version=config.get("version", "1.0.0"),
+                description=config.get("description"),
+                config_path=f"games/{game_id}/config.json",
+                is_enabled=bool(config.get("enabled", False)),
+                is_builtin=True,
+            ))
+        else:
+            row.name = config.get("name", row.name)
+            row.version = config.get("version", row.version)
+            row.description = config.get("description", row.description)
+    db.session.commit()
+
+
 def register_games(app):
     """发现并注册所有游戏插件 Blueprint。"""
     registered = []

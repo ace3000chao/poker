@@ -9,7 +9,7 @@ from flask_cors import CORS
 from config import get_config
 from extensions import db, migrate
 from errors import ok
-from games.registry import register_games
+from games.registry import register_games, sync_games_to_db
 
 
 def create_app(config_object=None):
@@ -31,6 +31,10 @@ def create_app(config_object=None):
 
     with app.app_context():
         register_games(app)
+        try:
+            sync_games_to_db(app)
+        except Exception as exc:  # noqa: BLE001 首次迁移前表不存在,容忍
+            app.logger.warning("games 表同步跳过(可能尚未迁移):%s", exc)
 
     return app
 
@@ -66,10 +70,12 @@ def register_blueprints(app):
     """
     from auth.routes import auth_bp, user_bp
     from cards.routes import cards_bp, special_bp
+    from leaderboard.routes import leaderboard_bp
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(user_bp, url_prefix="/api/user")
     app.register_blueprint(cards_bp, url_prefix="/api/cards")
     app.register_blueprint(special_bp, url_prefix="/api/special-cards")
+    app.register_blueprint(leaderboard_bp, url_prefix="/api/leaderboard")
 
 
 if __name__ == "__main__":

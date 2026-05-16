@@ -1,24 +1,27 @@
 """示例游戏标准路由。
 
-实现《游戏插件接口规范》第三节要求的三个路由:
-  GET  /info   获取游戏信息
-  POST /play   开始游戏(下发 session)
-  POST /score  上报成绩
-注:JWT 鉴权依赖公共服务层 @require_auth,待 auth 模块完成后接入,
-此处先以 TODO 标注,保证框架可独立验证。
+实现《游戏插件接口规范》第三节的三个路由,并接入公共服务层:
+  GET  /info   获取游戏信息(公开)
+  POST /play   开始游戏(需登录,平台校验下架/每日次数)
+  POST /score  上报成绩(需登录,平台统一结算积分,Q6)
+插件自身不写积分/不碰数据库,只上报原始成绩。
 """
 import json
 import os
 import uuid
 from datetime import datetime, timezone
 
-from flask import Blueprint, request
+from flask import Blueprint, request, g
 
 from errors import ok, fail, ERR_PARAM
+from auth.decorators import require_auth
+from common import scoring
+from common.scoring import ScoringError
 
 bp = Blueprint("demo_game", __name__)
 
 _CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.json")
+_GAME_KEY = "demo_game"
 
 
 def _load_config():
@@ -39,9 +42,12 @@ def info():
 
 
 @bp.post("/play")
+@require_auth
 def play():
-    # TODO(auth): @require_auth + 今日次数校验(daily_game_counts)
-    cfg = _load_config()
+    try:
+        cfg = scoring.start_session(g.current_user, _GAME_KEY)
+    except ScoringError as e:
+        return fail(e.code, e.message)
     return ok({
         "game_session_id": f"sess_{uuid.uuid4().hex[:12]}",
         "started_at": datetime.now(timezone.utc).isoformat(),
@@ -50,15 +56,14 @@ def play():
 
 
 @bp.post("/score")
+@require_auth
 def score():
-    # TODO(auth): @require_auth + session 校验 + 积分结算 + 写 game_scores
     body = request.get_json(silent=True) or {}
     for field in ("score", "duration", "timestamp"):
         if field not in body:
             return fail(ERR_PARAM, f"缺少必填字段:{field}")
-    return ok({
-        "earned_points": 0,
-        "total_points": 0,
-        "rank": None,
-        "note": "示例插件:积分结算待公共服务层接入",
-    })
+    try:
+        result = scoring.submit_score(g.current_user, _GAME_KEY, body)
+    except ScoringError as e:
+        return fail(e.code, e.message)
+    return ok(result)
