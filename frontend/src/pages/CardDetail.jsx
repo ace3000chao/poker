@@ -3,18 +3,23 @@ import { useParams, Link } from 'react-router-dom'
 import { api } from '../api'
 
 const SUIT_SYMBOL = { hearts: '♥', spades: '♠', clubs: '♣', diamonds: '♦' }
+const SUIT_COLOR = {
+  hearts: 'text-hearts',
+  spades: 'text-spades',
+  clubs: 'text-clubs',
+  diamonds: 'text-diamonds',
+}
 
 function Field({ label, value }) {
   if (!value) return null
   return (
-    <div className="flex py-2 border-b border-slate-100 text-sm">
+    <div className="flex py-2.5 border-b border-tiffany/15 text-sm">
       <span className="w-24 text-slate-400 shrink-0">{label}</span>
-      <span className="flex-1">{value}</span>
+      <span className="flex-1 text-tiffany-deep">{value}</span>
     </div>
   )
 }
 
-// 校友档案详情页。访客可完整查看。
 export default function CardDetail() {
   const { key } = useParams()
   const [card, setCard] = useState(null)
@@ -31,51 +36,72 @@ export default function CardDetail() {
     return (
       <div className="p-8 text-center">
         <p className="text-hearts">{error}</p>
-        <Link to="/" className="text-slate-500 text-sm underline mt-4 inline-block">
+        <Link to="/" className="text-tiffany-dark text-sm underline mt-4 inline-block">
           返回牌墙
         </Link>
       </div>
     )
-  if (!card) return <p className="p-8 text-center text-slate-400">加载中…</p>
+  if (!card)
+    return <p className="p-8 text-center text-tiffany-dark animate-pulse">加载中…</p>
+
+  const sym = SUIT_SYMBOL[card.suit]
+  const color = SUIT_COLOR[card.suit] || 'text-tiffany-deep'
+  const name = card.alumni_name?.replace(/【占位】/, '')
 
   return (
-    <div className="p-4 max-w-screen-sm mx-auto">
-      <Link to="/" className="text-slate-500 text-sm">‹ 返回牌墙</Link>
-      <div className="mt-3 bg-white rounded-2xl shadow p-5">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-2xl text-slate-400">
-            {card.alumni_name?.[0]}
+    <div className="max-w-screen-sm mx-auto p-4">
+      {/* 牌面头卡 */}
+      <div className="relative rounded-3xl bg-white shadow-card overflow-hidden">
+        <div className="h-2 bg-gradient-to-r from-tiffany to-tiffany-dark" />
+        <div className={`absolute top-5 left-4 leading-none ${color}`}>
+          <div className="text-xl font-extrabold">{card.rank}</div>
+          <div className="text-lg">{sym}</div>
+        </div>
+        <div className={`absolute top-5 right-4 leading-none ${color} text-right`}>
+          <div className="text-xl font-extrabold">{card.rank}</div>
+          <div className="text-lg">{sym}</div>
+        </div>
+
+        <div className="flex flex-col items-center pt-6 pb-6 px-6">
+          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-tiffany-light to-tiffany flex items-center justify-center text-3xl font-bold text-tiffany-deep ring-4 ring-white shadow-card">
+            {name?.[0]}
           </div>
-          <div>
-            <h1 className="text-xl font-bold">{card.alumni_name}</h1>
-            <p className="text-sm text-slate-500">
-              {card.position} · {card.company_name}
-            </p>
-            <p className="text-xs text-slate-400 mt-1">
-              {SUIT_SYMBOL[card.suit]} {card.rank} · {card.industry}
-            </p>
-          </div>
+          <h1 className="mt-3 text-xl font-extrabold text-tiffany-deep">{name}</h1>
+          <p className="text-sm text-slate-500">
+            {card.position} · {card.company_name}
+          </p>
+          <span className="mt-2 text-xs px-3 py-1 rounded-full bg-tiffany/15 text-tiffany-deep">
+            {sym} {card.industry}
+          </span>
         </div>
 
         {card.business_desc && (
-          <p className="mt-4 text-sm bg-slate-50 rounded-lg p-3 text-slate-600">
+          <p className="mx-6 mb-6 text-sm bg-tiffany/10 rounded-2xl p-4 text-tiffany-deep leading-relaxed">
             {card.business_desc}
           </p>
         )}
-
-        <div className="mt-4">
-          <Field label="毕业年份" value={card.graduation_year} />
-          <Field label="学院" value={card.college} />
-          <Field label="专业" value={card.major} />
-          <Field label="公司地址" value={card.company_address} />
-          <Field label="创立年份" value={card.founded_year} />
-          <Field label="团队规模" value={card.team_size} />
-          <Field label="联系电话" value={card.contact_phone} />
-          <Field label="微信" value={card.wechat} />
-          <Field label="邮箱" value={card.email} />
-          <Field label="个人感言" value={card.alumni_quote} />
-        </div>
       </div>
+
+      {/* 详细信息 */}
+      <div className="mt-4 rounded-2xl bg-white shadow-card p-5">
+        <Field label="毕业年份" value={card.graduation_year} />
+        <Field label="学院" value={card.college} />
+        <Field label="专业" value={card.major} />
+        <Field label="公司地址" value={card.company_address} />
+        <Field label="创立年份" value={card.founded_year} />
+        <Field label="团队规模" value={card.team_size} />
+        <Field label="联系电话" value={card.contact_phone} />
+        <Field label="微信" value={card.wechat} />
+        <Field label="邮箱" value={card.email} />
+        <Field label="个人感言" value={card.alumni_quote} />
+      </div>
+
+      <Link
+        to="/"
+        className="mt-5 block text-center py-3 rounded-full bg-tiffany text-tiffany-deep font-semibold hover:bg-tiffany-dark transition"
+      >
+        ‹ 返回扑克牌墙
+      </Link>
     </div>
   )
 }

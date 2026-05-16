@@ -4,19 +4,25 @@ import CardDetail from './pages/CardDetail'
 import Login from './pages/Login'
 import { getToken } from './api'
 
-// 移动端优先外壳:顶部标题 + 路由出口 + 底部导航。
 export default function App() {
   const loc = useLocation()
   const logged = !!getToken()
+  const onHome = loc.pathname === '/'
 
   return (
-    <div className="min-h-full bg-slate-50 flex flex-col">
-      <header className="bg-slate-900 text-white px-4 py-3 sticky top-0 z-10 shadow">
-        <Link to="/">
-          <h1 className="text-lg font-bold">我们的王牌</h1>
-          <p className="text-[11px] text-slate-300">中山职业技术学院 · 创业校友扑克</p>
-        </Link>
-      </header>
+    <div className="min-h-full flex flex-col bg-[#F2FBF9]">
+      {/* 首页 hero 自带标题,内页才显示顶栏 */}
+      {!onHome && (
+        <header className="bg-tiffany text-tiffany-deep px-4 py-3 sticky top-0 z-10 shadow-card">
+          <Link to="/" className="flex items-center gap-2">
+            <span className="text-lg">♠</span>
+            <div>
+              <h1 className="text-base font-extrabold leading-none">我们的王牌</h1>
+              <p className="text-[11px] opacity-75">创业校友扑克</p>
+            </div>
+          </Link>
+        </header>
+      )}
 
       <main className="flex-1 pb-16">
         <Routes>
@@ -27,21 +33,25 @@ export default function App() {
         </Routes>
       </main>
 
-      <nav className="fixed bottom-0 inset-x-0 bg-white border-t flex text-xs text-center">
+      <nav className="fixed bottom-0 inset-x-0 bg-white border-t border-tiffany/30 flex text-xs text-center shadow-[0_-4px_16px_-8px_rgba(14,77,69,0.2)]">
         {[
-          { to: '/', label: '牌墙' },
-          { to: '/login', label: logged ? '已登录' : '登录' },
-        ].map((t) => (
-          <Link
-            key={t.to}
-            to={t.to}
-            className={`flex-1 py-3 ${
-              loc.pathname === t.to ? 'text-slate-900 font-semibold' : 'text-slate-400'
-            }`}
-          >
-            {t.label}
-          </Link>
-        ))}
+          { to: '/', label: '牌墙', icon: '♠' },
+          { to: '/login', label: logged ? '我的' : '登录', icon: '◆' },
+        ].map((t) => {
+          const active = loc.pathname === t.to
+          return (
+            <Link
+              key={t.to}
+              to={t.to}
+              className={`flex-1 py-2.5 ${
+                active ? 'text-tiffany-deep font-semibold' : 'text-slate-400'
+              }`}
+            >
+              <div className={`text-base ${active ? 'text-tiffany-dark' : ''}`}>{t.icon}</div>
+              {t.label}
+            </Link>
+          )
+        })}
       </nav>
     </div>
   )
