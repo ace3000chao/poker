@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Database (lives outside repo at /data/poker, but ignore any local copies)
+*.db
+*.sqlite
+*.sqlite3
+
+# Flask-Migrate local
+instance/
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.log
+
+# Project-local private instructions
+CLAUDE.local.md
