@@ -71,11 +71,13 @@ def register_blueprints(app):
     from auth.routes import auth_bp, user_bp
     from cards.routes import cards_bp, special_bp
     from leaderboard.routes import leaderboard_bp
+    from admin.routes import admin_bp
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(user_bp, url_prefix="/api/user")
     app.register_blueprint(cards_bp, url_prefix="/api/cards")
     app.register_blueprint(special_bp, url_prefix="/api/special-cards")
     app.register_blueprint(leaderboard_bp, url_prefix="/api/leaderboard")
+    app.register_blueprint(admin_bp, url_prefix="/api/admin")
 
 
 if __name__ == "__main__":
