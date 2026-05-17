@@ -1,6 +1,7 @@
 import { Routes, Route, Link, useLocation } from 'react-router-dom'
 import CardWall from './pages/CardWall'
 import CardDetail from './pages/CardDetail'
+import SpecialDetail from './pages/SpecialDetail'
 import Login from './pages/Login'
 import { getToken } from './api'
 
@@ -31,6 +32,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<CardWall />} />
           <Route path="/card/:key" element={<CardDetail />} />
+          <Route path="/special/:type" element={<SpecialDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="*" element={<CardWall />} />
         </Routes>

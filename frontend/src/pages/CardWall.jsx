@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
 import PokerCard from '../components/PokerCard'
+import SpecialCard from '../components/SpecialCard'
 
 const SUITS = [
   { key: 'hearts', symbol: '♥', label: '科技 · 互联网 · AI', color: 'text-hearts', bar: 'bg-hearts' },
@@ -11,6 +12,7 @@ const SUITS = [
 
 export default function CardWall() {
   const [cards, setCards] = useState([])
+  const [special, setSpecial] = useState([])
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -29,7 +31,16 @@ export default function CardWall() {
 
   useEffect(() => {
     load('')
+    api
+      .listSpecial()
+      .then((d) => setSpecial(d.items || []))
+      .catch(() => {})
   }, [])
+
+  // 大王在前,小王在后
+  const sortedSpecial = [...special].sort((a) =>
+    a.type === 'king' ? -1 : 1,
+  )
 
   const grouped = SUITS.map((s) => ({
     ...s,
@@ -98,6 +109,21 @@ export default function CardWall() {
           </p>
         )}
         {error && <p className="text-center text-schoolred py-12">{error}</p>}
+
+        {!loading && !error && sortedSpecial.length > 0 && !q && (
+          <section className="mb-9">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-1.5 h-6 rounded-full bg-[#E8B33A]" />
+              <span className="text-xl font-bold text-[#E8B33A]">♛</span>
+              <h2 className="font-bold text-school-deep">王牌 · 学校与学院</h2>
+            </div>
+            <div className="grid grid-cols-2 gap-3.5">
+              {sortedSpecial.map((s) => (
+                <SpecialCard key={s.type} card={s} />
+              ))}
+            </div>
+          </section>
+        )}
 
         {!loading &&
           !error &&
