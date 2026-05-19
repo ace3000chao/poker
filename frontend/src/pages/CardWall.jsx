@@ -14,6 +14,7 @@ const SUITS = [
 export default function CardWall() {
   const [cards, setCards] = useState([])
   const [special, setSpecial] = useState([])
+  const [cardBack, setCardBack] = useState('')
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -35,6 +36,10 @@ export default function CardWall() {
     api
       .listSpecial()
       .then((d) => setSpecial(d.items || []))
+      .catch(() => {})
+    api
+      .settings()
+      .then((d) => setCardBack(d.card_back_url || ''))
       .catch(() => {})
   }, [])
 
@@ -118,7 +123,7 @@ export default function CardWall() {
               <span className="text-xl font-bold text-[#E8B33A]">♛</span>
               <h2 className="font-bold text-school-deep">王牌 · 学校与学院</h2>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3.5">
               {sortedSpecial.map((s) => (
                 <SpecialCard key={s.type} card={s} />
               ))}
@@ -143,7 +148,7 @@ export default function CardWall() {
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
                   {g.items.map((c, i) => (
-                    <PokerCard key={c.card_key} card={c} index={i} />
+                    <PokerCard key={c.card_key} card={c} index={i} cardBack={cardBack} />
                   ))}
                 </div>
               )}

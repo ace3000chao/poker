@@ -31,7 +31,20 @@ async function request(path, { method = 'GET', body, auth = false } = {}) {
   return json.data
 }
 
+async function uploadFile(file) {
+  const fd = new FormData()
+  fd.append('file', file)
+  const headers = {}
+  const t = getToken()
+  if (t) headers.Authorization = `Bearer ${t}`
+  const res = await fetch('/api/admin/upload', { method: 'POST', headers, body: fd })
+  const json = await res.json()
+  if (json.code !== 0) throw new Error(json.message || '上传失败')
+  return json.data.url
+}
+
 export const api = {
+  uploadFile,
   listCards: (params = {}) => {
     const qs = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v),
@@ -68,4 +81,8 @@ export const api = {
     request(`/admin/games/${gameId}/toggle`, {
       method: 'POST', body: { enabled }, auth: true,
     }),
+  adminGetSettings: () => request('/admin/settings', { auth: true }),
+  adminPutSettings: (payload) =>
+    request('/admin/settings', { method: 'PUT', body: payload, auth: true }),
+  settings: () => request('/settings'),
 }

@@ -1,14 +1,18 @@
 """管理后台路由。所有接口需管理员(require_admin)。"""
 import json
+import os
+import time
+import uuid
 
-from flask import Blueprint, request
+from flask import Blueprint, request, current_app
+from werkzeug.utils import secure_filename
 
 from errors import (
     ok, fail,
     ERR_PARAM, ERR_BUSINESS, ERR_CARD_NOT_FOUND, ERR_GAME_NOT_FOUND,
 )
 from extensions import db
-from models import User, Card, SpecialCard, Game, GameScore
+from models import User, Card, SpecialCard, Game, GameScore, AppSetting
 from auth.decorators import require_admin
 from cards.service import card_detail, special_detail
 
@@ -18,11 +22,11 @@ admin_bp = Blueprint("admin", __name__)
 CARD_FIELDS = [
     "suit", "rank", "alumni_name", "graduation_year", "college", "major",
     "company_name", "position", "industry", "business_desc", "avatar_url",
-    "contact_phone", "wechat", "email", "company_address", "founded_year",
-    "team_size", "latest_news", "alumni_quote", "is_published",
+    "card_image_url", "contact_phone", "wechat", "email", "company_address",
+    "founded_year", "team_size", "latest_news", "alumni_quote", "is_published",
 ]
 SPECIAL_FIELDS = [
-    "title", "subtitle", "logo_url", "motto", "description",
+    "title", "subtitle", "logo_url", "card_image_url", "motto", "description",
     "contact_phone", "contact_email", "address", "website_url",
 ]
 
@@ -37,6 +41,55 @@ def _page_args():
     except ValueError:
         size = 20
     return page, size
+
+
+# ---------- 图片上传 ----------
+
+@admin_bp.post("/upload")
+@require_admin
+def upload_image():
+    """上传扑克牌图片,返回可访问 URL。表单字段名 file。"""
+    f = request.files.get("file")
+    if f is None or not f.filename:
+        return fail(ERR_PARAM, "未收到文件(字段名 file)")
+    ext = f.filename.rsplit(".", 1)[-1].lower() if "." in f.filename else ""
+    if ext not in current_app.config["ALLOWED_IMG_EXT"]:
+        return fail(ERR_PARAM, "仅支持 png/jpg/jpeg/webp/gif")
+
+    upload_dir = current_app.config["UPLOAD_DIR"]
+    os.makedirs(upload_dir, exist_ok=True)
+    name = f"{int(time.time())}_{uuid.uuid4().hex[:8]}.{ext}"
+    f.save(os.path.join(upload_dir, secure_filename(name)))
+    return ok({"url": f"/api/uploads/{name}"})
+
+
+# ---------- 全局设置(统一背面图等) ----------
+
+def _get_setting(key, default=None):
+    row = AppSetting.query.get(key)
+    return row.value if row else default
+
+
+@admin_bp.get("/settings")
+@require_admin
+def get_settings():
+    return ok({"card_back_url": _get_setting("card_back_url")})
+
+
+@admin_bp.put("/settings")
+@require_admin
+def put_settings():
+    body = request.get_json(silent=True) or {}
+    for key in ("card_back_url",):
+        if key in body:
+            row = AppSetting.query.get(key)
+            if row is None:
+                row = AppSetting(key=key, value=body[key])
+                db.session.add(row)
+            else:
+                row.value = body[key]
+    db.session.commit()
+    return ok({"card_back_url": _get_setting("card_back_url")})
 
 
 # ---------- 概览 ----------

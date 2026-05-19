@@ -38,6 +38,7 @@ def card_brief(c):
         "industry": c.industry,
         "business_desc": c.business_desc,
         "avatar_url": c.avatar_url,
+        "card_image_url": c.card_image_url,
     }
 
 
@@ -57,6 +58,7 @@ def card_detail(c):
         "industry": c.industry,
         "business_desc": c.business_desc,
         "avatar_url": c.avatar_url,
+        "card_image_url": c.card_image_url,
         "contact_phone": c.contact_phone,
         "wechat": c.wechat,
         "email": c.email,
@@ -78,6 +80,7 @@ def special_detail(s):
         "title": s.title,
         "subtitle": s.subtitle,
         "logo_url": s.logo_url,
+        "card_image_url": s.card_image_url,
         "motto": s.motto,
         "description": s.description,
         "contact_phone": s.contact_phone,

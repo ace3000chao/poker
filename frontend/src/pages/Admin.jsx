@@ -1,6 +1,45 @@
 import { useEffect, useState, useCallback } from 'react'
 import { api, getToken, setToken } from '../api'
 
+/* 图片上传 + 预览(正面/背面通用) */
+function ImageUpload({ label, value, onChange, hint }) {
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  async function pick(e) {
+    const f = e.target.files?.[0]
+    if (!f) return
+    setBusy(true); setErr('')
+    try {
+      const url = await api.uploadFile(f)
+      onChange(url)
+    } catch (x) { setErr(x.message) } finally { setBusy(false) }
+  }
+  return (
+    <div className="mb-3">
+      <label className="text-xs text-slate-400">{label}</label>
+      <div className="flex items-center gap-3 mt-1">
+        <div className="w-16 h-[88px] rounded-lg bg-school-light overflow-hidden flex items-center justify-center shrink-0">
+          {value
+            ? <img src={value} alt="" className="w-full h-full object-cover" />
+            : <span className="text-[10px] text-slate-400">无图</span>}
+        </div>
+        <div className="flex-1 min-w-0">
+          <label className="inline-block px-3 py-1.5 rounded-lg bg-school text-white text-xs cursor-pointer">
+            {busy ? '上传中…' : '选择图片'}
+            <input type="file" accept="image/*" className="hidden" onChange={pick} disabled={busy} />
+          </label>
+          {value && (
+            <button type="button" onClick={() => onChange('')}
+              className="ml-2 text-xs text-schoolred underline">移除</button>
+          )}
+          {hint && <p className="text-[10px] text-slate-400 mt-1">{hint}</p>}
+          {err && <p className="text-[10px] text-schoolred mt-1">{err}</p>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ---------------- 登录 ---------------- */
 function AdminLogin({ onOk }) {
   const [phone, setPhone] = useState('')
@@ -120,6 +159,7 @@ function Cards() {
         alumni_name: edit.alumni_name, company_name: edit.company_name,
         position: edit.position, industry: edit.industry,
         suit: edit.suit, rank: edit.rank, is_published: edit.is_published,
+        card_image_url: edit.card_image_url || '',
       })
       setEdit(null); load(q)
     } catch (e) { alert(e.message) }
@@ -157,6 +197,12 @@ function Cards() {
                 onChange={(e) => setEdit({ ...edit, [f]: e.target.value })}
                 className="w-full mb-2 px-3 py-2 rounded-lg bg-school-light text-sm outline-none" />
             ))}
+            <ImageUpload
+              label="扑克牌正面图(该牌专属)"
+              value={edit.card_image_url}
+              onChange={(url) => setEdit({ ...edit, card_image_url: url })}
+              hint="美工绘制的该张牌正面图,各牌不同"
+            />
             <label className="flex items-center gap-2 text-sm my-2">
               <input type="checkbox" checked={!!edit.is_published}
                 onChange={(e) => setEdit({ ...edit, is_published: e.target.checked })} />
@@ -185,7 +231,7 @@ function Special() {
         title: s.title, subtitle: s.subtitle, motto: s.motto,
         description: s.description, contact_phone: s.contact_phone,
         contact_email: s.contact_email, address: s.address,
-        website_url: s.website_url,
+        website_url: s.website_url, card_image_url: s.card_image_url || '',
       })
       alert('已保存'); reload()
     } catch (e) { alert(e.message) }
@@ -211,6 +257,14 @@ function Special() {
                 className="w-full px-3 py-2 rounded-lg bg-school-light text-sm outline-none" />
             </div>
           ))}
+          <ImageUpload
+            label={`${s.subtitle}正面图`}
+            value={s.card_image_url}
+            onChange={(url) => {
+              const n = [...items]; n[idx] = { ...s, card_image_url: url }; setItems(n)
+            }}
+            hint="美工绘制的大王/小王正面图"
+          />
           <button onClick={() => save(items[idx])}
             className="mt-2 px-5 py-2 rounded-lg bg-school text-white text-sm font-semibold">保存</button>
         </div>
@@ -248,11 +302,45 @@ function Games() {
   )
 }
 
+/* ---------------- 统一背面图 ---------------- */
+function CardBack() {
+  const [url, setUrl] = useState('')
+  const [saved, setSaved] = useState(false)
+  useEffect(() => {
+    api.adminGetSettings().then((d) => setUrl(d.card_back_url || '')).catch(() => {})
+  }, [])
+  async function save() {
+    try { await api.adminPutSettings({ card_back_url: url }); setSaved(true) }
+    catch (e) { alert(e.message) }
+  }
+  return (
+    <div className="p-4">
+      <div className="bg-white rounded-2xl shadow-card p-5">
+        <h3 className="font-bold text-school-deep mb-1">扑克牌统一背面图</h3>
+        <p className="text-xs text-slate-400 mb-4">
+          全部 54 张牌共用同一张背面;尚未上传正面图的牌,前端将以此背面展示。
+        </p>
+        <ImageUpload
+          label="统一背面图"
+          value={url}
+          onChange={(u) => { setUrl(u); setSaved(false) }}
+          hint="建议竖版扑克牌比例(约 5:7)"
+        />
+        <button onClick={save}
+          className="mt-2 px-5 py-2 rounded-lg bg-school text-white text-sm font-semibold">
+          保存
+        </button>
+        {saved && <span className="ml-3 text-xs text-school">已保存</span>}
+      </div>
+    </div>
+  )
+}
+
 /* ---------------- 主框架 ---------------- */
 const TABS = [
   ['stats', '概览', Stats], ['users', '用户', Users],
   ['cards', '扑克牌', Cards], ['special', '大小王', Special],
-  ['games', '游戏', Games],
+  ['cardback', '牌背', CardBack], ['games', '游戏', Games],
 ]
 
 export default function Admin() {

@@ -46,6 +46,8 @@ class Card(db.Model):
     industry = db.Column(db.String(50), nullable=True, index=True)
     business_desc = db.Column(db.String(200), nullable=True)
     avatar_url = db.Column(db.String(500), nullable=True)
+    # 美工绘制的扑克牌正面图(每张各不相同)
+    card_image_url = db.Column(db.String(500), nullable=True)
     contact_phone = db.Column(db.String(20), nullable=True)
     wechat = db.Column(db.String(50), nullable=True)
     email = db.Column(db.String(100), nullable=True)
@@ -72,6 +74,8 @@ class SpecialCard(db.Model):
     title = db.Column(db.String(100), nullable=False)
     subtitle = db.Column(db.String(100), nullable=True)
     logo_url = db.Column(db.String(500), nullable=True)
+    # 美工绘制的牌正面图(大王/小王各一张)
+    card_image_url = db.Column(db.String(500), nullable=True)
     motto = db.Column(db.String(200), nullable=True)
     description = db.Column(db.Text, nullable=True)
     contact_phone = db.Column(db.String(20), nullable=True)
@@ -167,3 +171,13 @@ class LoginAttempt(db.Model):
     __table_args__ = (
         db.Index("idx_phone_attempted", "phone", "attempted_at"),
     )
+
+
+class AppSetting(db.Model):
+    """全局键值设置。当前用于:card_back_url(扑克牌统一背面图)。"""
+
+    __tablename__ = "app_settings"
+
+    key = db.Column(db.String(50), primary_key=True)
+    value = db.Column(db.Text, nullable=True)
+    updated_at = db.Column(db.DateTime, default=_now, onupdate=_now)

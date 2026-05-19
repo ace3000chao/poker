@@ -61,6 +61,18 @@ def register_health(app):
     def health():
         return ok({"status": "up", "service": "poker-platform"})
 
+    @app.get("/api/uploads/<path:filename>")
+    def serve_upload(filename):
+        from flask import send_from_directory
+        return send_from_directory(app.config["UPLOAD_DIR"], filename)
+
+    @app.get("/api/settings")
+    def public_settings():
+        """公开设置:扑克牌统一背面图。"""
+        from models import AppSetting
+        row = AppSetting.query.get("card_back_url")
+        return ok({"card_back_url": row.value if row else None})
+
 
 def register_blueprints(app):
     """注册核心业务 Blueprint。

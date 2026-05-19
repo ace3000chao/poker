@@ -62,10 +62,20 @@ export default function CardDetail() {
           <div className="text-lg">{sym}</div>
         </div>
 
+        {card.card_image_url && (
+          <img
+            src={card.card_image_url}
+            alt={name}
+            className="w-full max-h-[420px] object-contain bg-school-light"
+          />
+        )}
+
         <div className="flex flex-col items-center pt-6 pb-6 px-6">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-school-mid to-school flex items-center justify-center text-3xl font-bold text-white ring-4 ring-white shadow-card">
-            {name?.[0]}
-          </div>
+          {!card.card_image_url && (
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-school-mid to-school flex items-center justify-center text-3xl font-bold text-white ring-4 ring-white shadow-card">
+              {name?.[0]}
+            </div>
+          )}
           <h1 className="mt-3 text-xl font-extrabold text-school-deep">{name}</h1>
           <p className="text-sm text-slate-500">
             {card.position} · {card.company_name}

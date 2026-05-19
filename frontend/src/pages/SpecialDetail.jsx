@@ -55,7 +55,13 @@ export default function SpecialDetail() {
           <span className="text-[11px] tracking-[0.3em] text-[#E8B33A] font-semibold">
             {card.subtitle} · 王牌
           </span>
-          {isKing ? (
+          {card.card_image_url ? (
+            <img
+              src={card.card_image_url}
+              alt={card.title}
+              className="w-[70%] max-h-72 object-contain my-5 rounded-xl"
+            />
+          ) : isKing ? (
             <img
               src="/logo-zspt-white.png"
               alt={card.title}
