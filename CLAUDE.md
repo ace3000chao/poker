@@ -92,3 +92,5 @@ React Router 单页应用。`src/api.js` 统一封装请求:自动拆 `{code,mes
 ## 文档
 
 `docs/` 有定稿技术文档。冲突时**以 `docs/技术决策定稿-v1.1.md` 为准**(Q1–Q7 最终决策)。`开发启动清单.md` 记录了各项关键决策的来龙去脉(错误码重建、JWT 时长、不做密码登录、不用 CSRF、限流解耦、积分统一结算等)。
+
+`docs/游戏插件开发指南.md` 是面向第三方插件开发者的**活文档**。改动以下文件且影响到插件契约时,必须同步更新该指南(其末尾"本文档维护约定"列了对应章节):`errors.py`、`games/registry.py`、`common/scoring.py`、`games/demo_game/`、`auth/decorators.py`、`config.py`、`config.json` 字段约定。
