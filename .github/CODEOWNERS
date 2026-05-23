@@ -1,0 +1,42 @@
+# CODEOWNERS —— 自动指派 PR reviewer。
+# 语法见 https://docs.github.com/en/repositories/managing-your-repositories-settings-and-security/customizing-your-repository/about-code-owners
+#
+# 用法:平台维护者把下面所有 @OWNER 替换为自己的 GitHub handle;
+# 每接一个新插件,在文末加一行 `/backend/games/<game_id>/  @plugin-author-handle`。
+
+# 默认:任何未匹配文件都由维护者审核
+*  @OWNER
+
+# 平台核心:任何改动都必须维护者 review
+/backend/app.py                  @OWNER
+/backend/extensions.py           @OWNER
+/backend/errors.py               @OWNER
+/backend/config.py               @OWNER
+/backend/models.py               @OWNER
+/backend/games/registry.py       @OWNER
+/backend/games/__init__.py       @OWNER
+/backend/common/                 @OWNER
+/backend/auth/                   @OWNER
+/backend/admin/                  @OWNER
+/backend/cards/                  @OWNER
+/backend/leaderboard/            @OWNER
+/backend/utils/                  @OWNER
+/backend/migrations/             @OWNER
+/backend/seed.py                 @OWNER
+/backend/set_admin.py            @OWNER
+
+# 文档
+/docs/                           @OWNER
+/CONTRIBUTING.md                 @OWNER
+/CLAUDE.md                       @OWNER
+
+# CI / 仓库基础设施
+/.github/                        @OWNER
+/scripts/                        @OWNER
+
+# 前端
+/frontend/                       @OWNER
+
+# 插件:每个目录写一行,本插件 PR 自动通知本插件作者
+/backend/games/demo_game/        @OWNER
+# /backend/games/card_guess/     @plugin-author-handle

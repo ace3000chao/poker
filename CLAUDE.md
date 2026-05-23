@@ -89,6 +89,15 @@ npm run build    # 产出 dist/
 
 React Router 单页应用。`src/api.js` 统一封装请求:自动拆 `{code,message,data}` 信封,`code!==0` 抛 `Error`(带 `.code`);`auth:true` 的请求带 Bearer Token(存于 localStorage `poker_access_token`)。`/admin` 路由是独立全屏后台,无公众端顶栏/底栏。配色走学校 VI(`tailwind.config.js` 的 `school` / `schoolred` 色板)。
 
+## 协作流程
+
+本仓采用 **GitHub Flow + Fork-and-PR**。默认分支 `main` 受保护,**不要直接 `commit` 到 `main`**——
+任何改动先开分支(`feat/...` / `fix/...` / `docs/...` / `plugin/<game_id>`),推到 GitHub 后开 PR,
+等 CI 绿 + reviewer approve 后再合。完整流程见 `CONTRIBUTING.md`,CI 配置在 `.github/workflows/ci.yml`。
+插件 PR 有目录沙盒检查:CI 会拒绝改动 `backend/` 平台核心文件的插件 PR。
+
+测试服部署:合并后跑 `./scripts/deploy-test.sh`(脚本头部 TODO 路径/服务名需先按测试服实际填写)。
+
 ## 文档
 
 `docs/` 有定稿技术文档。冲突时**以 `docs/技术决策定稿-v1.1.md` 为准**(Q1–Q7 最终决策)。`开发启动清单.md` 记录了各项关键决策的来龙去脉(错误码重建、JWT 时长、不做密码登录、不用 CSRF、限流解耦、积分统一结算等)。

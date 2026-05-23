@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 先看《游戏插件开发指南》
+    url: https://github.com/OWNER/poker/blob/main/docs/游戏插件开发指南.md
+    about: 插件开发问题大多在指南里有答案,请先查阅

@@ -1,0 +1,116 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  # ---------- 1. 目录沙盒:插件 PR 不准动平台文件 ----------
+  plugin-sandbox:
+    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'plugin/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: 检查 PR 改动只在本插件目录
+        run: |
+          set -euo pipefail
+          base="origin/${{ github.base_ref }}"
+          git fetch origin "${{ github.base_ref }}" --depth=50
+          # plugin/<id> 或 plugin/<id>/<feat>
+          id="$(echo "${{ github.head_ref }}" | cut -d/ -f2)"
+          echo "插件 id: $id"
+          changed=$(git diff --name-only "$base"...HEAD)
+          echo "本 PR 变更文件:"
+          echo "$changed"
+          allowed_re="^(backend/games/${id}/|docs/games/${id}\.md|CODEOWNERS|\.github/CODEOWNERS)$"
+          bad=$(echo "$changed" | grep -vE "$allowed_re" || true)
+          if [ -n "$bad" ]; then
+            echo "::error::插件 PR 不应改动以下文件:"
+            echo "$bad"
+            exit 1
+          fi
+          echo "✅ 改动均在 backend/games/${id}/ 沙盒内"
+
+  # ---------- 2. 服务启动 + 自动发现 + 三路由烟测 ----------
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      - name: 安装依赖
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 语法 sanity(全后端 compileall)
+        run: python -m compileall -q backend
+
+      - name: 数据库迁移
+        working-directory: backend
+        env:
+          FLASK_ENV: dev
+        run: python -m flask db upgrade
+
+      - name: 启动后端(后台)
+        working-directory: backend
+        env:
+          FLASK_ENV: dev
+        run: |
+          python -m flask run --no-reload --host 127.0.0.1 --port 5000 \
+            > /tmp/server.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:5000/api/health >/dev/null && break
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:5000/api/health
+
+      - name: 自动发现:demo_game 必须在已注册列表
+        run: |
+          grep -q "已注册游戏插件:.*demo_game" /tmp/server.log || {
+            echo "::error::demo_game 未被 registry 发现"
+            cat /tmp/server.log
+            exit 1
+          }
+
+      - name: 烟测 demo_game /info
+        run: |
+          resp=$(curl -sf http://127.0.0.1:5000/api/games/demo_game/info)
+          echo "$resp"
+          python -c "import sys,json; d=json.loads(sys.argv[1]); assert d['code']==0, d" "$resp"
+
+      - name: 烟测插件 /info(仅 plugin/<id> PR)
+        if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'plugin/')
+        run: |
+          id="$(echo "${{ github.head_ref }}" | cut -d/ -f2)"
+          echo "测试插件: $id"
+          # 1. 已注册
+          grep -q "已注册游戏插件:.*${id}" /tmp/server.log || {
+            echo "::error::插件 $id 未被自动发现。检查目录、__init__.py 是否暴露 bp、config.json 是否存在"
+            cat /tmp/server.log
+            exit 1
+          }
+          # 2. /info 可访问且 code=0
+          resp=$(curl -sf "http://127.0.0.1:5000/api/games/${id}/info") || {
+            echo "::error::/api/games/${id}/info 请求失败"
+            cat /tmp/server.log
+            exit 1
+          }
+          echo "$resp"
+          python -c "import sys,json; d=json.loads(sys.argv[1]); assert d['code']==0, d" "$resp"
+
+      - name: 失败时打印服务器日志
+        if: failure()
+        run: |
+          echo "--- /tmp/server.log ---"
+          cat /tmp/server.log || true
