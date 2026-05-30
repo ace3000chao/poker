@@ -6,6 +6,7 @@ import Admin from './pages/Admin'
 import Login from './pages/Login'
 import GameList from './pages/GameList'
 import GameGuard from './components/GameGuard'
+import Leaderboard from './pages/Leaderboard'
 import { PUBLIC_GAMES } from './config/gameRegistry'
 import { getToken } from './api'
 
@@ -27,7 +28,7 @@ export default function App() {
   return (
     <div className="min-h-full flex flex-col bg-school-tint">
       {/* 首页 hero 自带品牌头,内页才显示蓝底顶栏 */}
-      {!onHome && (
+      {!onHome && !loc.pathname.startsWith('/leaderboard') && (
         <header className="bg-school text-white px-4 py-2.5 sticky top-0 z-10 shadow-card">
           <Link to="/" className="flex items-center gap-3">
             <img
@@ -49,6 +50,7 @@ export default function App() {
           <Route path="/special/:type" element={<SpecialDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/games" element={<GameList />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
           {PUBLIC_GAMES.map(({ gameId, route, component: GamePage }) => (
             <Route
               key={gameId}

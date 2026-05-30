@@ -41,7 +41,15 @@ export default function GameList() {
 
   return (
     <div className="px-4 py-6 max-w-lg mx-auto">
-      <h2 className="text-lg font-bold text-school mb-4">选择游戏</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-bold text-school">选择游戏</h2>
+        <button
+          onClick={() => navigate('/leaderboard')}
+          className="text-sm text-school/70 hover:text-school"
+        >
+          🏆 排行榜
+        </button>
+      </div>
       <div className="grid grid-cols-1 gap-4">
         {games.map((g) => (
           <button
