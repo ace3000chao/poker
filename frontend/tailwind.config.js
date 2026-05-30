@@ -32,5 +32,14 @@ export default {
       },
     },
   },
+  safelist: [
+    'ring-2',
+    'ring-school',
+    'shadow-lg',
+    'scale-105',
+    'z-10',
+    'z-0',
+    'card-reveal',
+  ],
   plugins: [],
 }

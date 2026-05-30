@@ -1,0 +1,23 @@
+{
+  "id": "pyramid",
+  "name": "金字塔纸牌",
+  "version": "1.0.0",
+  "description": "配对和为13消除金字塔，K可以单独消除，挑战全消",
+  "icon": "static/icon.png",
+  "enabled": true,
+  "settings": {
+    "max_daily_games": 15,
+    "points_per_win": 40,
+    "points_per_loss": 10,
+    "time_limit_seconds": 600
+  },
+  "score_schema": {
+    "score": "integer",
+    "duration": "integer",
+    "timestamp": "string",
+    "is_win": "boolean",
+    "cards_cleared": "integer",
+    "chain_max": "integer",
+    "stock_used": "integer"
+  }
+}

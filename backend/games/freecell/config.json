@@ -1,0 +1,22 @@
+{
+  "id": "freecell",
+  "name": "空当接龙",
+  "version": "1.0.0",
+  "description": "全明牌纯策略，利用4个空闲位巧妙安排，完成全部A→K收集",
+  "icon": "static/icon.png",
+  "enabled": true,
+  "settings": {
+    "max_daily_games": 10,
+    "points_per_win": 60,
+    "points_per_loss": 10,
+    "time_limit_seconds": 1200
+  },
+  "score_schema": {
+    "score": "integer",
+    "duration": "integer",
+    "timestamp": "string",
+    "is_win": "boolean",
+    "moves": "integer",
+    "freecell_usage_avg": "number"
+  }
+}

@@ -61,6 +61,16 @@ export const api = {
   leaderboard: (game) =>
     request(`/leaderboard${game ? `?game=${game}` : ''}`),
 
+  // ---- 游戏插件 ----
+  games: () => request('/games'),
+  gameInfo: (gameId) => request(`/games/${gameId}/info`),
+  gameCheck: (gameId) =>
+    request(`/games/${gameId}/check`, { method: 'POST', auth: true }),
+  gamePlay: (gameId) =>
+    request(`/games/${gameId}/play`, { method: 'POST', auth: true }),
+  gameScore: (gameId, payload) =>
+    request(`/games/${gameId}/score`, { method: 'POST', body: payload, auth: true }),
+
   // ---- 管理后台 ----
   adminLogin: (phone, password) =>
     request('/auth/admin-login', { method: 'POST', body: { phone, password } }),

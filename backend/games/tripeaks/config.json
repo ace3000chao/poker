@@ -1,0 +1,23 @@
+{
+  "id": "tripeaks",
+  "name": "三峰纸牌",
+  "version": "1.0.0",
+  "description": "三个金字塔等待清除，选择比基础牌大1或小1的牌，享受连锁消除的爽快感",
+  "icon": "static/icon.png",
+  "enabled": true,
+  "settings": {
+    "max_daily_games": 10,
+    "points_per_win": 50,
+    "points_per_loss": 10,
+    "time_limit_seconds": 900
+  },
+  "score_schema": {
+    "score": "integer",
+    "duration": "integer",
+    "timestamp": "string",
+    "is_win": "boolean",
+    "chain_max": "integer",
+    "stock_used": "integer",
+    "cards_cleared": "integer"
+  }
+}

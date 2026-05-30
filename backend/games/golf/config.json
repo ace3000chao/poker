@@ -1,0 +1,22 @@
+{
+  "id": "golf",
+  "name": "高尔夫纸牌",
+  "version": "1.0.0",
+  "description": "极速消除！7列牌中依次选择比基础牌大1或小1的牌，全部消除即一杆进洞",
+  "icon": "static/icon.png",
+  "enabled": true,
+  "settings": {
+    "max_daily_games": 20,
+    "points_per_win": 30,
+    "points_per_loss": 10,
+    "time_limit_seconds": 300
+  },
+  "score_schema": {
+    "score": "integer",
+    "duration": "integer",
+    "timestamp": "string",
+    "is_win": "boolean",
+    "cards_cleared": "integer",
+    "stock_used": "integer"
+  }
+}
