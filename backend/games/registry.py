@@ -1,4 +1,4 @@
-﻿"""游戏插件自动注册。
+"""游戏插件自动注册。
 
 扫描 backend/games/ 下每个子目录,加载 config.json,导入其
 __init__.py 暴露的 `bp` Blueprint,挂载到 /api/games/<game_id>。

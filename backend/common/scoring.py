@@ -1,4 +1,4 @@
-﻿"""积分统一结算(Q6:游戏插件只上报原始成绩,平台结算)。
+"""积分统一结算(Q6:游戏插件只上报原始成绩,平台结算)。
 
 游戏插件在 /play 调 start_session,/score 调 submit_score,自身不写积分。
 规则来源:games 表 + 该游戏 config.json 的 settings。
