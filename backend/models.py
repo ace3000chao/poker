@@ -22,8 +22,11 @@ class User(db.Model):
     # 用户可后续设置密码以启用「手机号 + 密码」登录(feat/password-login)。
     password_hash = db.Column(db.String(128), nullable=True)
     nickname = db.Column(db.String(50), nullable=True)
-    role = db.Column(db.String(20), default="user")  # user / admin
+    role = db.Column(db.String(20), default="user")  # 权限:user / admin
     points = db.Column(db.Integer, default=0)
+    avatar_url = db.Column(db.String(500), nullable=True)  # 用户个人头像
+    # 关联的校友牌:非空即"校友扑克用户"(其本人是 52 张牌之一)
+    card_id = db.Column(db.Integer, db.ForeignKey("cards.id"), nullable=True, index=True)
     jwt_token = db.Column(db.Text, nullable=True)
     jwt_expires_at = db.Column(db.DateTime, nullable=True)
     jwt_refresh_token = db.Column(db.Text, nullable=True)

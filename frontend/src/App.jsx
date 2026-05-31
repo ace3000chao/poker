@@ -5,6 +5,7 @@ import CardDetail from './pages/CardDetail'
 import SpecialDetail from './pages/SpecialDetail'
 import Admin from './pages/Admin'
 import Login from './pages/Login'
+import Profile from './pages/Profile'
 import GameList from './pages/GameList'
 import GameGuard from './components/GameGuard'
 import Leaderboard from './pages/Leaderboard'
@@ -60,6 +61,7 @@ export default function App() {
           <Route path="/card/:key" element={<CardDetail />} />
           <Route path="/special/:type" element={<SpecialDetail />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/me" element={<Profile />} />
           <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/games" element={<GameList />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
@@ -80,7 +82,7 @@ export default function App() {
         {[
           { to: '/', label: '牌墙', icon: '♠' },
           { to: '/games', label: '游戏', icon: '🎮' },
-          { to: '/login', label: logged ? '我的' : '登录', icon: '◆' },
+          { to: logged ? '/me' : '/login', label: logged ? '我的' : '登录', icon: '◆' },
           ...(isAdmin ? [{ to: '/admin', label: '后台', icon: '⚙' }] : []),
         ].map((t) => {
           const active = t.to === '/games'

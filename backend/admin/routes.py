@@ -1,11 +1,7 @@
 """管理后台路由。所有接口需管理员(require_admin)。"""
 import json
-import os
-import time
-import uuid
 
-from flask import Blueprint, request, current_app
-from werkzeug.utils import secure_filename
+from flask import Blueprint, request
 
 from errors import (
     ok, fail,
@@ -49,18 +45,11 @@ def _page_args():
 @require_admin
 def upload_image():
     """上传扑克牌图片,返回可访问 URL。表单字段名 file。"""
-    f = request.files.get("file")
-    if f is None or not f.filename:
-        return fail(ERR_PARAM, "未收到文件(字段名 file)")
-    ext = f.filename.rsplit(".", 1)[-1].lower() if "." in f.filename else ""
-    if ext not in current_app.config["ALLOWED_IMG_EXT"]:
-        return fail(ERR_PARAM, "仅支持 png/jpg/jpeg/webp/gif")
-
-    upload_dir = current_app.config["UPLOAD_DIR"]
-    os.makedirs(upload_dir, exist_ok=True)
-    name = f"{int(time.time())}_{uuid.uuid4().hex[:8]}.{ext}"
-    f.save(os.path.join(upload_dir, secure_filename(name)))
-    return ok({"url": f"/api/uploads/{name}"})
+    from common.uploads import save_image
+    try:
+        return ok({"url": save_image(request.files.get("file"))})
+    except ValueError as e:
+        return fail(ERR_PARAM, str(e))
 
 
 # ---------- 全局设置(统一背面图等) ----------
@@ -129,7 +118,7 @@ def list_users():
         "total": total, "page": page, "size": size,
         "items": [{
             "id": u.id, "phone": u.phone, "nickname": u.nickname,
-            "role": u.role, "points": u.points,
+            "role": u.role, "points": u.points, "card_id": u.card_id,
             "created_at": u.created_at.isoformat() if u.created_at else None,
             "last_login_at": u.last_login_at.isoformat() if u.last_login_at else None,
         } for u in rows],
@@ -173,6 +162,33 @@ def adjust_points(uid):
         return fail(ERR_PARAM, "需提供 set 或 delta")
     db.session.commit()
     return ok({"id": u.id, "points": u.points})
+
+
+@admin_bp.post("/users/<int:uid>/link-card")
+@require_admin
+def link_user_card(uid):
+    """手动关联/解除用户与校友牌(给缺电话、自动匹配不到的校友补关联)。
+
+    body: { "card_key": "spades_A" } 关联;{ "card_key": "" } 或缺省则解除。
+    """
+    u = User.query.get(uid)
+    if u is None:
+        return fail(ERR_PARAM, "用户不存在")
+    body = request.get_json(silent=True) or {}
+    key = (body.get("card_key") or "").strip()
+    if not key:
+        u.card_id = None
+        db.session.commit()
+        return ok({"id": u.id, "card_id": None})
+    card = Card.query.filter_by(card_key=key).first()
+    if card is None:
+        return fail(ERR_CARD_NOT_FOUND, "校友牌不存在(card_key 如 spades_A)")
+    u.card_id = card.id
+    db.session.commit()
+    return ok({
+        "id": u.id, "card_id": card.id,
+        "card_key": card.card_key, "alumni_name": card.alumni_name,
+    })
 
 
 # ---------- 扑克牌管理 ----------

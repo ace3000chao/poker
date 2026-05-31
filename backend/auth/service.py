@@ -141,17 +141,35 @@ def verify_code(phone, code, purpose):
 
 # ---------- 用户与令牌 ----------
 
+def maybe_link_alumni(user):
+    """若用户手机号匹配某张校友牌的联系电话,自动关联为"校友扑克用户"。
+    已关联则跳过(管理员手动关联的不被覆盖)。返回是否新建立关联。"""
+    if user.card_id:
+        return False
+    from models import Card
+    card = Card.query.filter(
+        Card.contact_phone == user.phone, Card.contact_phone.isnot(None)
+    ).first()
+    if card:
+        user.card_id = card.id
+        return True
+    return False
+
+
 def get_or_create_user(phone):
     """新手机号首次登录自动注册(Q3)。"""
     user = User.query.filter_by(phone=phone).first()
     if user is None:
         user = User(phone=phone, role="user", points=0)
         db.session.add(user)
-        db.session.commit()
+    maybe_link_alumni(user)
+    db.session.commit()
     return user
 
 
 def issue_tokens(user):
+    # 每次登录都尝试关联校友牌(覆盖密码登录等不经 get_or_create_user 的路径)
+    maybe_link_alumni(user)
     access = issue_access_token(user)
     refresh = issue_refresh_token(user)
     cfg = current_app.config

@@ -122,6 +122,18 @@ function Users() {
       load(q)
     } catch (e) { alert(e.message) }
   }
+
+  async function linkCard(u) {
+    const v = window.prompt(
+      `关联校友牌 card_key(如 spades_A);留空则解除关联。\n当前:${u.card_id ? '已关联 #' + u.card_id : '未关联'}`,
+      '',
+    )
+    if (v == null) return
+    try {
+      await api.adminLinkCard(u.id, v.trim())
+      load(q)
+    } catch (e) { alert(e.message) }
+  }
   return (
     <div className="p-4">
       <form onSubmit={(e) => { e.preventDefault(); load(q) }} className="flex gap-2 mb-3">
@@ -137,9 +149,13 @@ function Users() {
           <div key={u.id} className="grid grid-cols-[1fr_auto_auto] gap-2 px-4 py-2.5 border-t border-school/10 items-center">
             <span>{u.phone}
               {u.role === 'admin' && <em className="ml-2 not-italic text-[10px] px-1.5 py-0.5 rounded bg-schoolred text-white">管理员</em>}
+              {u.card_id && <em className="ml-2 not-italic text-[10px] px-1.5 py-0.5 rounded bg-gold/20 text-gold-dark">校友</em>}
             </span>
             <span className="text-school font-semibold">{u.points}</span>
-            <button onClick={() => adjust(u)} className="text-school text-xs underline">调积分</button>
+            <div className="flex gap-2.5 text-xs">
+              <button onClick={() => adjust(u)} className="text-school underline">调积分</button>
+              <button onClick={() => linkCard(u)} className="text-gold-dark underline">校友牌</button>
+            </div>
           </div>
         ))}
         {data.items.length === 0 && <p className="p-4 text-slate-400 text-xs">无数据</p>}

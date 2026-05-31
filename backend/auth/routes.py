@@ -231,13 +231,47 @@ def refresh():
 @user_bp.get("/profile")
 @require_auth
 def profile():
+    from models import Card
+
     u = g.current_user
+    card = Card.query.get(u.card_id) if u.card_id else None
+    # 前端展示用的四态角色:guest 由前端(未登录)判定,这里给 user/alumni/admin
+    display_role = "admin" if u.role == "admin" else ("alumni" if card else "user")
     return ok({
         "id": u.id,
         "phone": u.phone,
         "nickname": u.nickname,
-        "role": u.role,
+        "role": display_role,        # admin / alumni / user(前端展示)
+        "authority": u.role,         # user / admin(权限)
+        "avatar_url": u.avatar_url,
         "points": u.points,
+        "is_alumni": bool(card),
+        "alumni_card": (
+            {"card_key": card.card_key, "alumni_name": card.alumni_name}
+            if card else None
+        ),
         "created_at": u.created_at.isoformat() if u.created_at else None,
         "last_login_at": u.last_login_at.isoformat() if u.last_login_at else None,
     })
+
+
+@user_bp.post("/avatar")
+@require_auth
+def upload_avatar():
+    """登录用户上传个人头像。校友用户(已关联校友牌)的头像同步到其牌面。"""
+    from common.uploads import save_image
+    from models import Card
+
+    try:
+        url = save_image(request.files.get("file"))
+    except ValueError as e:
+        return fail(ERR_PARAM, str(e))
+
+    u = g.current_user
+    u.avatar_url = url
+    if u.card_id:
+        card = Card.query.get(u.card_id)
+        if card:
+            card.avatar_url = url   # 同步到校友牌,牌墙/详情同步更新
+    db.session.commit()
+    return ok({"avatar_url": url, "synced_to_card": bool(u.card_id)})

@@ -108,8 +108,22 @@ async function uploadFile(file) {
   return json.data.url
 }
 
+// 登录用户上传个人头像(校友用户会同步到其校友牌)
+async function uploadAvatar(file) {
+  const fd = new FormData()
+  fd.append('file', file)
+  const headers = {}
+  const t = getToken()
+  if (t) headers.Authorization = `Bearer ${t}`
+  const res = await fetch('/api/user/avatar', { method: 'POST', headers, body: fd })
+  const json = await parseJson(res)
+  if (json.code !== 0) throw new Error(json.message || '上传失败')
+  return json.data // { avatar_url, synced_to_card }
+}
+
 export const api = {
   uploadFile,
+  uploadAvatar,
   listCards: (params = {}) => {
     const qs = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v),
@@ -153,6 +167,8 @@ export const api = {
     request(`/admin/users?q=${encodeURIComponent(q)}&page=${page}&size=20`, { auth: true }),
   adminSetPoints: (id, payload) =>
     request(`/admin/users/${id}/points`, { method: 'POST', body: payload, auth: true }),
+  adminLinkCard: (id, card_key) =>
+    request(`/admin/users/${id}/link-card`, { method: 'POST', body: { card_key }, auth: true }),
   adminCards: (q = '', page = 1) =>
     request(`/admin/cards?q=${encodeURIComponent(q)}&page=${page}&size=20`, { auth: true }),
   adminEditCard: (id, payload) =>
