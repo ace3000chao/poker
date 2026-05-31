@@ -42,9 +42,13 @@ def card_brief(c):
     }
 
 
-def card_detail(c):
-    """详情用完整结构(含扩展信息与 extra_data)。"""
-    return {
+def card_detail(c, include_contact=False):
+    """详情用完整结构(含扩展信息与 extra_data)。
+
+    联系方式(手机/微信/邮箱/公司地址)属个人隐私,仅对已登录用户返回
+    (include_contact=True);匿名访客拿不到这些字段。
+    """
+    data = {
         "id": c.id,
         "card_key": c.card_key,
         "suit": c.suit,
@@ -59,10 +63,6 @@ def card_detail(c):
         "business_desc": c.business_desc,
         "avatar_url": c.avatar_url,
         "card_image_url": c.card_image_url,
-        "contact_phone": c.contact_phone,
-        "wechat": c.wechat,
-        "email": c.email,
-        "company_address": c.company_address,
         "founded_year": c.founded_year,
         "team_size": c.team_size,
         "latest_news": c.latest_news,
@@ -71,10 +71,18 @@ def card_detail(c):
         "is_published": bool(c.is_published),
         "updated_at": c.updated_at.isoformat() if c.updated_at else None,
     }
+    if include_contact:
+        data.update({
+            "contact_phone": c.contact_phone,
+            "wechat": c.wechat,
+            "email": c.email,
+            "company_address": c.company_address,
+        })
+    return data
 
 
-def special_detail(s):
-    return {
+def special_detail(s, include_contact=False):
+    data = {
         "id": s.id,
         "type": s.type,
         "title": s.title,
@@ -83,13 +91,17 @@ def special_detail(s):
         "card_image_url": s.card_image_url,
         "motto": s.motto,
         "description": s.description,
-        "contact_phone": s.contact_phone,
-        "contact_email": s.contact_email,
-        "address": s.address,
         "website_url": s.website_url,
         "features": _safe_json(s.features),
         "extra_data": _safe_json(s.extra_data),
     }
+    if include_contact:
+        data.update({
+            "contact_phone": s.contact_phone,
+            "contact_email": s.contact_email,
+            "address": s.address,
+        })
+    return data
 
 
 def query_cards(q=None, suit=None, industry=None):

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api, setToken, getToken } from '../api'
+import { api, setTokens, getToken } from '../api'
 
 // 三种模式:验证码登录(新号自动注册) / 密码登录 / 忘记密码重置。
 // 验证码当前为后端桩实现,开发期看后端日志。
@@ -39,7 +39,7 @@ export default function Login() {
       if (mode === 'code') d = await api.login(phone, code)
       else if (mode === 'password') d = await api.loginPassword(phone, password)
       else d = await api.resetPassword(phone, code, newPassword)
-      setToken(d.access_token)
+      setTokens(d)
       nav('/')
     } catch (e) {
       setMsg(e.message)

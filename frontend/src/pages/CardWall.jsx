@@ -24,7 +24,7 @@ export default function CardWall() {
     api
       .listCards({ q: keyword })
       .then((d) => {
-        setCards(d.items)
+        setCards(d.items || [])
         setError('')
       })
       .catch((e) => setError(e.message))
@@ -43,9 +43,9 @@ export default function CardWall() {
       .catch(() => {})
   }, [])
 
-  // 大王在前,小王在后
-  const sortedSpecial = [...special].sort((a) =>
-    a.type === 'king' ? -1 : 1,
+  // 大王在前,小王在后(用合法的二元比较器,避免非确定排序)
+  const sortedSpecial = [...special].sort(
+    (a, b) => (a.type === 'king' ? 0 : 1) - (b.type === 'king' ? 0 : 1),
   )
 
   const grouped = SUITS.map((s) => ({

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { api, getToken, setToken } from '../api'
+import { api, getToken, setTokens, clearAuth } from '../api'
 
 /* 图片上传 + 预览(正面/背面通用) */
 function ImageUpload({ label, value, onChange, hint }) {
@@ -55,7 +55,7 @@ function AdminLogin({ onOk }) {
         setMsg('该账号无管理员权限')
         return
       }
-      setToken(d.access_token)
+      setTokens(d)
       onOk()
     } catch (e) {
       setMsg(e.message)
@@ -366,7 +366,7 @@ export default function Admin() {
       <header className="bg-school text-white px-4 py-3 flex items-center gap-3">
         <img src="/logo-zspt-white.png" alt="logo" className="h-6 object-contain" />
         <span className="text-sm font-bold border-l border-white/30 pl-3">管理后台</span>
-        <button onClick={() => { setToken(null); setAuthed(false) }}
+        <button onClick={() => { clearAuth(); setAuthed(false) }}
           className="ml-auto text-xs bg-white/15 px-3 py-1 rounded-full">退出</button>
       </header>
       <nav className="bg-white flex overflow-x-auto border-b border-school/10 text-sm">

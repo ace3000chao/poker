@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { api } from '../api'
+import { api, getToken } from '../api'
 
 const SUIT_SYMBOL = { hearts: '♥', spades: '♠', clubs: '♣', diamonds: '♦' }
 const SUIT_COLOR = {
@@ -104,6 +104,12 @@ export default function CardDetail() {
         <Field label="微信" value={card.wechat} />
         <Field label="邮箱" value={card.email} />
         <Field label="个人感言" value={card.alumni_quote} />
+        {!getToken() && (
+          <p className="pt-3 text-xs text-slate-400">
+            登录后可查看联系方式 ·{' '}
+            <Link to="/login" className="text-school underline">去登录</Link>
+          </p>
+        )}
       </div>
 
       <Link

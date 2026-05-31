@@ -163,8 +163,13 @@ def reset_password():
     if not service.is_valid_password(new_password):
         return fail(ERR_PASSWORD_WEAK)
 
+    # 与登录共用失败计数/锁定,防止凭验证码暴力重置
+    if service.is_locked(phone):
+        return fail(ERR_ACCOUNT_LOCKED)
+
     status, record = service.verify_code(phone, code, "reset_password")
     if status != service.CODE_OK:
+        service.record_attempt(phone, success=False, ip=ip)
         return fail({
             service.CODE_NOT_FOUND: ERR_CODE_WRONG,
             service.CODE_WRONG: ERR_CODE_WRONG,
@@ -172,8 +177,13 @@ def reset_password():
             service.CODE_USED: ERR_CODE_USED,
         }[status])
 
+    # 重置密码不得为未注册手机号建号;为避免账号枚举,统一回"验证码错误"
+    user = User.query.filter_by(phone=phone).first()
+    if user is None:
+        service.record_attempt(phone, success=False, ip=ip)
+        return fail(ERR_CODE_WRONG)
+
     record.is_used = True
-    user = service.get_or_create_user(phone)
     user.set_password(new_password)
     db.session.commit()
     service.record_attempt(phone, success=True, ip=ip)

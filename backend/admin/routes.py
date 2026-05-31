@@ -193,7 +193,7 @@ def admin_list_cards():
     rows = query.order_by(Card.id.asc()).offset((page - 1) * size).limit(size).all()
     return ok({
         "total": total, "page": page, "size": size,
-        "items": [card_detail(c) for c in rows],
+        "items": [card_detail(c, include_contact=True) for c in rows],
     })
 
 
@@ -220,7 +220,7 @@ def edit_card(cid):
         if f in body:
             setattr(c, f, body[f])
     db.session.commit()
-    return ok(card_detail(c))
+    return ok(card_detail(c, include_contact=True))
 
 
 # ---------- 特殊牌(大王/小王)管理 ----------
@@ -228,7 +228,7 @@ def edit_card(cid):
 @admin_bp.get("/special-cards")
 @require_admin
 def admin_special():
-    return ok({"items": [special_detail(s) for s in SpecialCard.query.all()]})
+    return ok({"items": [special_detail(s, include_contact=True) for s in SpecialCard.query.all()]})
 
 
 @admin_bp.put("/special-cards/<stype>")
@@ -246,7 +246,7 @@ def edit_special(stype):
         if jf in body:
             setattr(s, jf, json.dumps(body[jf], ensure_ascii=False))
     db.session.commit()
-    return ok(special_detail(s))
+    return ok(special_detail(s, include_contact=True))
 
 
 # ---------- 游戏管理(上下架) ----------

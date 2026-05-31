@@ -1,11 +1,24 @@
-"""扑克牌档案路由(全部公开,访客可访问,无 require_auth)。"""
+"""扑克牌档案路由(公开可访问;联系方式仅对已登录用户返回)。"""
 from flask import Blueprint, request
 
 from errors import ok, fail, ERR_CARD_NOT_FOUND
+from utils.jwt_util import decode_token
 from . import service
 
 cards_bp = Blueprint("cards", __name__)
 special_bp = Blueprint("special_cards", __name__)
+
+
+def _is_authenticated():
+    """可选鉴权:带了有效 Access Token 即视为已登录(无效/缺失按匿名,不抛错)。
+
+    这些是公开页面,匿名访客照常拿到除联系方式外的全部信息。
+    """
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return False
+    payload, err = decode_token(auth_header[7:].strip(), expected_type="access")
+    return err is None and payload is not None
 
 
 @cards_bp.get("")
@@ -26,11 +39,12 @@ def get_card(key):
     c = service.find_card(key)
     if c is None:
         return fail(ERR_CARD_NOT_FOUND)
-    return ok(service.card_detail(c))
+    return ok(service.card_detail(c, include_contact=_is_authenticated()))
 
 
 @special_bp.get("")
 @special_bp.get("/")
 def list_special():
     items = service.all_special_cards()
-    return ok({"items": [service.special_detail(s) for s in items]})
+    inc = _is_authenticated()
+    return ok({"items": [service.special_detail(s, include_contact=inc) for s in items]})

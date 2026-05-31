@@ -37,6 +37,14 @@ class Config:
     LOGIN_MAX_FAIL = 5
     LOGIN_LOCK_DURATION = timedelta(minutes=15)
 
+    # CORS 允许来源(逗号分隔;默认仅测试服 + 本地开发口)
+    CORS_ORIGINS = [
+        o.strip() for o in os.environ.get(
+            "CORS_ORIGINS",
+            "http://106.55.169.208:3005,http://localhost:5173,http://127.0.0.1:5173",
+        ).split(",") if o.strip()
+    ]
+
 
 class DevConfig(Config):
     DEBUG = True

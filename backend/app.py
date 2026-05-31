@@ -26,11 +26,12 @@ def create_app(config_object=None):
     app = Flask(__name__)
     app.config.from_object(config_object or get_config())
     app.json.ensure_ascii = False  # 中文按原文返回,不转义为 \uXXXX
+    _validate_prod_secrets(app)
 
     # 扩展初始化
     db.init_app(app)
     migrate.init_app(app, db)
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    CORS(app, resources={r"/api/*": {"origins": app.config["CORS_ORIGINS"]}})
 
     # 注册模型(供 Flask-Migrate 发现)
     import models  # noqa: F401
@@ -47,6 +48,23 @@ def create_app(config_object=None):
             app.logger.warning("games 表同步跳过(可能尚未迁移):%s", exc)
 
     return app
+
+
+def _validate_prod_secrets(app):
+    """生产环境(非 DEBUG)必须用环境变量覆盖密钥,否则用公开默认值签 JWT
+    等于任何人都能伪造令牌。启动即拦截,避免带病上线。"""
+    if app.config.get("DEBUG"):
+        return
+    defaults = {
+        "SECRET_KEY": "dev-secret-change-in-prod",
+        "JWT_SECRET": "dev-jwt-secret-change-in-prod",
+    }
+    for key, dev_default in defaults.items():
+        val = app.config.get(key)
+        if not val or val == dev_default:
+            raise RuntimeError(
+                f"生产环境必须通过环境变量设置非默认的 {key}(当前为空或仍是开发默认值)"
+            )
 
 
 def register_security_headers(app):
