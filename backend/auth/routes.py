@@ -13,7 +13,16 @@ from errors import (
     ERR_CODE_WRONG, ERR_CODE_EXPIRED, ERR_CODE_USED, ERR_CODE_PURPOSE,
     ERR_REFRESH_INVALID,
     ERR_PASSWORD_WRONG, ERR_PASSWORD_WEAK, ERR_OLD_PASSWORD_WRONG,
+    ERR_FORBIDDEN, ERR_CARD_NOT_FOUND,
 )
+
+# 校友本人可自助编辑的公开字段(不含姓名/花色点数/是否公开/正面图——归管理员)
+ALUMNI_STR_FIELDS = [
+    "college", "major", "company_name", "position", "industry",
+    "business_desc", "alumni_quote", "latest_news",
+    "contact_phone", "wechat", "email", "company_address", "team_size",
+]
+ALUMNI_INT_FIELDS = ["graduation_year", "founded_year"]
 from extensions import db
 from models import User
 from utils.jwt_util import decode_token, issue_access_token
@@ -275,3 +284,36 @@ def upload_avatar():
             card.avatar_url = url   # 同步到校友牌,牌墙/详情同步更新
     db.session.commit()
     return ok({"avatar_url": url, "synced_to_card": bool(u.card_id)})
+
+
+@user_bp.put("/card")
+@require_auth
+def update_my_card():
+    """校友本人自助编辑自己牌的公开资料(白名单字段)。"""
+    from models import Card
+    from cards.service import card_detail
+
+    u = g.current_user
+    if not u.card_id:
+        return fail(ERR_FORBIDDEN, "仅校友本人可编辑校友资料")
+    card = Card.query.get(u.card_id)
+    if card is None:
+        return fail(ERR_CARD_NOT_FOUND)
+
+    body = request.get_json(silent=True) or {}
+    for f in ALUMNI_STR_FIELDS:
+        if f in body:
+            v = body[f]
+            setattr(card, f, (v.strip() if isinstance(v, str) else v) or None)
+    for f in ALUMNI_INT_FIELDS:
+        if f in body:
+            v = body[f]
+            if v in (None, ""):
+                setattr(card, f, None)
+            else:
+                try:
+                    setattr(card, f, int(v))
+                except (ValueError, TypeError):
+                    return fail(ERR_PARAM, f"{f} 必须为数字")
+    db.session.commit()
+    return ok(card_detail(card, include_contact=True))

@@ -148,6 +148,8 @@ export const api = {
       method: 'POST', body: { phone, code, new_password },
     }),
   profile: () => request('/user/profile', { auth: true }),
+  updateMyCard: (payload) =>
+    request('/user/card', { method: 'PUT', body: payload, auth: true }),
   leaderboard: (game) =>
     request(`/leaderboard${game ? `?game=${game}` : ''}`),
 

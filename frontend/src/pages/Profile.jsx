@@ -116,6 +116,15 @@ export default function Profile() {
             )}
           </div>
 
+          {p.is_alumni && (
+            <button
+              onClick={() => nav('/me/card')}
+              className="mt-4 w-full py-2.5 rounded-xl bg-gold/15 text-gold-dark text-sm font-semibold"
+            >
+              ✎ 编辑我的校友资料
+            </button>
+          )}
+
           {msg && <p className="mt-3 text-xs text-school-dark">{msg}</p>}
 
           <div className="mt-5 grid grid-cols-2 gap-3">

@@ -6,6 +6,7 @@ import SpecialDetail from './pages/SpecialDetail'
 import Admin from './pages/Admin'
 import Login from './pages/Login'
 import Profile from './pages/Profile'
+import EditCard from './pages/EditCard'
 import GameList from './pages/GameList'
 import GameGuard from './components/GameGuard'
 import Leaderboard from './pages/Leaderboard'
@@ -62,6 +63,7 @@ export default function App() {
           <Route path="/special/:type" element={<SpecialDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/me" element={<Profile />} />
+          <Route path="/me/card" element={<EditCard />} />
           <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/games" element={<GameList />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
