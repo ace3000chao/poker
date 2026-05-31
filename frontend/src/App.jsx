@@ -1,4 +1,5 @@
-﻿import { Routes, Route, Link, useLocation } from 'react-router-dom'
+﻿import { useState, useEffect } from 'react'
+import { Routes, Route, Link, useLocation } from 'react-router-dom'
 import CardWall from './pages/CardWall'
 import CardDetail from './pages/CardDetail'
 import SpecialDetail from './pages/SpecialDetail'
@@ -9,12 +10,21 @@ import GameGuard from './components/GameGuard'
 import Leaderboard from './pages/Leaderboard'
 import ChangePassword from './pages/ChangePassword'
 import { PUBLIC_GAMES } from './config/gameRegistry'
-import { getToken } from './api'
+import { api, getToken } from './api'
 
 export default function App() {
   const loc = useLocation()
   const logged = !!getToken()
   const onHome = loc.pathname === '/'
+
+  // 取当前用户角色,决定是否显示「后台」入口(仅管理员可见)
+  const [isAdmin, setIsAdmin] = useState(false)
+  useEffect(() => {
+    if (!logged) { setIsAdmin(false); return }
+    api.profile()
+      .then((p) => setIsAdmin(p?.role === 'admin'))
+      .catch(() => setIsAdmin(false))
+  }, [logged])
 
   // 管理后台:独立全屏,无公众端顶栏/底栏
   if (loc.pathname.startsWith('/admin')) {
@@ -69,6 +79,7 @@ export default function App() {
           { to: '/', label: '牌墙', icon: '♠' },
           { to: '/games', label: '游戏', icon: '🎮' },
           { to: '/login', label: logged ? '我的' : '登录', icon: '◆' },
+          ...(isAdmin ? [{ to: '/admin', label: '后台', icon: '⚙' }] : []),
         ].map((t) => {
           const active = t.to === '/games'
             ? loc.pathname.startsWith('/game')
