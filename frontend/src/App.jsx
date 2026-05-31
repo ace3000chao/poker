@@ -7,6 +7,7 @@ import Login from './pages/Login'
 import GameList from './pages/GameList'
 import GameGuard from './components/GameGuard'
 import Leaderboard from './pages/Leaderboard'
+import ChangePassword from './pages/ChangePassword'
 import { PUBLIC_GAMES } from './config/gameRegistry'
 import { getToken } from './api'
 
@@ -49,6 +50,7 @@ export default function App() {
           <Route path="/card/:key" element={<CardDetail />} />
           <Route path="/special/:type" element={<SpecialDetail />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/games" element={<GameList />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           {PUBLIC_GAMES.map(({ gameId, route, component: GamePage }) => (

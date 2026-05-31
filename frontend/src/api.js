@@ -53,10 +53,20 @@ export const api = {
   },
   getCard: (key) => request(`/cards/${encodeURIComponent(key)}`),
   listSpecial: () => request('/special-cards'),
-  sendCode: (phone) =>
-    request('/auth/send-code', { method: 'POST', body: { phone } }),
+  sendCode: (phone, purpose = 'login') =>
+    request('/auth/send-code', { method: 'POST', body: { phone, purpose } }),
   login: (phone, code) =>
     request('/auth/login', { method: 'POST', body: { phone, code } }),
+  loginPassword: (phone, password) =>
+    request('/auth/login-password', { method: 'POST', body: { phone, password } }),
+  setPassword: (new_password, old_password) =>
+    request('/auth/set-password', {
+      method: 'POST', body: { new_password, old_password }, auth: true,
+    }),
+  resetPassword: (phone, code, new_password) =>
+    request('/auth/reset-password', {
+      method: 'POST', body: { phone, code, new_password },
+    }),
   profile: () => request('/user/profile', { auth: true }),
   leaderboard: (game) =>
     request(`/leaderboard${game ? `?game=${game}` : ''}`),

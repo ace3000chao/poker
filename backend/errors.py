@@ -24,6 +24,10 @@ ERR_CODE_WRONG = 40003       # 验证码错误
 ERR_CODE_EXPIRED = 40004     # 验证码已过期
 ERR_CODE_USED = 40005        # 验证码已使用
 ERR_CODE_PURPOSE = 40006     # 验证码用途不匹配
+ERR_PASSWORD_WRONG = 40007       # 手机号或密码错误
+ERR_PASSWORD_NOT_SET = 40008     # 该账号未设置密码
+ERR_PASSWORD_WEAK = 40009        # 密码不符合复杂度要求
+ERR_OLD_PASSWORD_WRONG = 40010   # 原密码错误
 
 # 401xx 认证
 ERR_UNAUTHORIZED = 40101     # 未登录或 Token 无效
@@ -52,6 +56,10 @@ ERR_INTERNAL = 50001          # 服务器内部错误
 MESSAGES = {
     OK: "success",
     ERR_PARAM: "参数格式错误",
+    ERR_PASSWORD_WRONG: "手机号或密码错误",
+    ERR_PASSWORD_NOT_SET: "该账号未设置密码,请用验证码登录后设置",
+    ERR_PASSWORD_WEAK: "密码至少 8 位,且需同时包含字母和数字",
+    ERR_OLD_PASSWORD_WRONG: "原密码错误",
     ERR_BUSINESS: "业务逻辑错误",
     ERR_CODE_WRONG: "验证码错误",
     ERR_CODE_EXPIRED: "验证码已过期",

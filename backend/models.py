@@ -4,6 +4,8 @@
 """
 from datetime import datetime
 
+import bcrypt
+
 from extensions import db
 
 
@@ -16,7 +18,8 @@ class User(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     phone = db.Column(db.String(20), unique=True, nullable=False, index=True)
-    # 决策:password_hash 字段保留预留,MVP 不实现密码登录
+    # password_hash:bcrypt 哈希。注册仍走手机号+验证码(无密码),
+    # 用户可后续设置密码以启用「手机号 + 密码」登录(feat/password-login)。
     password_hash = db.Column(db.String(128), nullable=True)
     nickname = db.Column(db.String(50), nullable=True)
     role = db.Column(db.String(20), default="user")  # user / admin
@@ -28,6 +31,23 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=_now)
     updated_at = db.Column(db.DateTime, default=_now, onupdate=_now)
     last_login_at = db.Column(db.DateTime, nullable=True)
+
+    def set_password(self, raw):
+        """用 bcrypt 设置密码哈希。"""
+        self.password_hash = bcrypt.hashpw(
+            raw.encode("utf-8"), bcrypt.gensalt()
+        ).decode("utf-8")
+
+    def check_password(self, raw):
+        """校验明文密码;未设置密码时恒为 False。"""
+        if not self.password_hash:
+            return False
+        return bcrypt.checkpw(
+            raw.encode("utf-8"), self.password_hash.encode("utf-8")
+        )
+
+    def has_password(self):
+        return bool(self.password_hash)
 
 
 class Card(db.Model):
