@@ -102,6 +102,46 @@ def login():
     })
 
 
+@auth_bp.post("/register")
+def register():
+    """自助注册:手机号 + 密码 + 真实姓名 + 年级 + 专业。
+
+    新账号状态为 pending(待管理员审核);若手机号匹配某校友牌则自动通过(校友)。
+    注册即登录(签发令牌),但待审核期间访问受限(详情/游戏需通过)。
+    """
+    body = request.get_json(silent=True) or {}
+    phone = (body.get("phone") or "").strip()
+    password = body.get("password") or ""
+    real_name = (body.get("real_name") or "").strip()
+    grade = (body.get("grade") or "").strip()
+    reg_major = (body.get("major") or "").strip()
+
+    if not service.is_valid_phone(phone):
+        return fail(ERR_PARAM, "手机号格式错误")
+    if not service.is_valid_password(password):
+        return fail(ERR_PASSWORD_WEAK)
+    if not real_name or not grade or not reg_major:
+        return fail(ERR_PARAM, "请填写真实姓名、年级、专业")
+    if User.query.filter_by(phone=phone).first():
+        return fail(ERR_PARAM, "该手机号已注册,请直接登录")
+
+    user = User(phone=phone, role="user", status="pending",
+                real_name=real_name, grade=grade, reg_major=reg_major, points=0)
+    user.set_password(password)
+    db.session.add(user)
+    service.maybe_link_alumni(user)   # 校友手机号 → 自动通过并关联
+    db.session.commit()
+
+    tokens = service.issue_tokens(user)
+    return ok({
+        **tokens,
+        "user": {
+            "id": user.id, "phone": user.phone, "role": user.role,
+            "status": user.status, "is_alumni": bool(user.card_id),
+        },
+    })
+
+
 @auth_bp.post("/login-password")
 def login_password():
     """手机号 + 密码登录。失败按统一「密码错误」回应,不泄露账号是否存在。"""
@@ -252,6 +292,10 @@ def profile():
         "nickname": u.nickname,
         "role": display_role,        # admin / alumni / user(前端展示)
         "authority": u.role,         # user / admin(权限)
+        "status": u.status,          # pending / approved / rejected
+        "real_name": u.real_name,
+        "grade": u.grade,
+        "major": u.reg_major,
         "avatar_url": u.avatar_url,
         "points": u.points,
         "is_alumni": bool(card),

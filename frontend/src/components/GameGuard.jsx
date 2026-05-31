@@ -58,12 +58,20 @@ export default function GameGuard({ gameId, children }) {
           <p className="text-sm text-slate-500 mb-6">{reason}</p>
           <div className="flex gap-3 justify-center">
             {isLoginRequired && (
-              <button
-                onClick={() => navigate('/login')}
-                className="px-6 py-2 bg-school text-white rounded-lg text-sm font-semibold hover:bg-school-dark"
-              >
-                去登录
-              </button>
+              <>
+                <button
+                  onClick={() => navigate('/login')}
+                  className="px-6 py-2 bg-school text-white rounded-lg text-sm font-semibold hover:bg-school-dark"
+                >
+                  去登录
+                </button>
+                <button
+                  onClick={() => navigate('/register')}
+                  className="px-6 py-2 bg-gold/20 text-gold-dark rounded-lg text-sm font-semibold"
+                >
+                  去注册
+                </button>
+              </>
             )}
             <button
               onClick={() => navigate('/games')}

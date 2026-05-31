@@ -23,6 +23,12 @@ class User(db.Model):
     password_hash = db.Column(db.String(128), nullable=True)
     nickname = db.Column(db.String(50), nullable=True)
     role = db.Column(db.String(20), default="user")  # 权限:user / admin
+    # 注册审核状态:pending(待审核)/ approved(已通过)/ rejected(已拒绝)
+    status = db.Column(db.String(20), default="pending", index=True)
+    # 注册时填写,供管理员核验校友身份
+    real_name = db.Column(db.String(50), nullable=True)
+    grade = db.Column(db.String(20), nullable=True)   # 年级,如 "2015级"
+    reg_major = db.Column(db.String(100), nullable=True)  # 专业(避免与 Card.major 混淆)
     points = db.Column(db.Integer, default=0)
     avatar_url = db.Column(db.String(500), nullable=True)  # 用户个人头像
     # 关联的校友牌:非空即"校友扑克用户"(其本人是 52 张牌之一)

@@ -5,6 +5,7 @@ import CardDetail from './pages/CardDetail'
 import SpecialDetail from './pages/SpecialDetail'
 import Admin from './pages/Admin'
 import Login from './pages/Login'
+import Register from './pages/Register'
 import Profile from './pages/Profile'
 import EditCard from './pages/EditCard'
 import GameList from './pages/GameList'
@@ -62,6 +63,7 @@ export default function App() {
           <Route path="/card/:key" element={<CardDetail />} />
           <Route path="/special/:type" element={<SpecialDetail />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/me" element={<Profile />} />
           <Route path="/me/card" element={<EditCard />} />
           <Route path="/change-password" element={<ChangePassword />} />

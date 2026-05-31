@@ -36,6 +36,7 @@ ERR_REFRESH_INVALID = 40103  # Refresh Token 无效或过期
 
 # 403xx 权限
 ERR_FORBIDDEN = 40301        # 无权限(非管理员等)
+ERR_ACCOUNT_PENDING = 40302  # 账号待管理员审核通过
 
 # 404xx 资源
 ERR_GAME_NOT_FOUND = 40401   # 游戏不存在
@@ -69,6 +70,7 @@ MESSAGES = {
     ERR_TOKEN_EXPIRED: "Token 已过期",
     ERR_REFRESH_INVALID: "Refresh Token 无效或已过期",
     ERR_FORBIDDEN: "无访问权限",
+    ERR_ACCOUNT_PENDING: "账号待审核,管理员通过后即可使用",
     ERR_GAME_NOT_FOUND: "游戏不存在",
     ERR_GAME_OFFLINE: "游戏已下架",
     ERR_CARD_NOT_FOUND: "扑克牌不存在",

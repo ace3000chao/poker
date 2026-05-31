@@ -3,6 +3,7 @@ from flask import Blueprint, request
 
 from errors import ok, fail, ERR_CARD_NOT_FOUND
 from utils.jwt_util import decode_token
+from auth.decorators import require_approved
 from . import service
 
 cards_bp = Blueprint("cards", __name__)
@@ -35,11 +36,13 @@ def list_cards():
 
 
 @cards_bp.get("/<key>")
+@require_approved
 def get_card(key):
+    # 详情页仅对已登录且审核通过的用户开放(访客/待审核看不到)
     c = service.find_card(key)
     if c is None:
         return fail(ERR_CARD_NOT_FOUND)
-    return ok(service.card_detail(c, include_contact=_is_authenticated()))
+    return ok(service.card_detail(c, include_contact=True))
 
 
 @special_bp.get("")

@@ -152,6 +152,7 @@ def maybe_link_alumni(user):
     ).first()
     if card:
         user.card_id = card.id
+        user.status = "approved"   # 校友本人默认通过审核
         return True
     return False
 

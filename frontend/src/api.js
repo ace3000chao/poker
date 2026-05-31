@@ -139,6 +139,8 @@ export const api = {
     request('/auth/login', { method: 'POST', body: { phone, code } }),
   loginPassword: (phone, password) =>
     request('/auth/login-password', { method: 'POST', body: { phone, password } }),
+  register: (payload) =>
+    request('/auth/register', { method: 'POST', body: payload }),
   setPassword: (new_password, old_password) =>
     request('/auth/set-password', {
       method: 'POST', body: { new_password, old_password }, auth: true,
@@ -165,8 +167,13 @@ export const api = {
 
   // ---- 管理后台 ----
   adminStats: () => request('/admin/stats', { auth: true }),
-  adminUsers: (q = '', page = 1) =>
-    request(`/admin/users?q=${encodeURIComponent(q)}&page=${page}&size=20`, { auth: true }),
+  adminUsers: (q = '', page = 1, status = '') =>
+    request(
+      `/admin/users?q=${encodeURIComponent(q)}&page=${page}&size=20${status ? `&status=${status}` : ''}`,
+      { auth: true },
+    ),
+  adminSetUserStatus: (id, status) =>
+    request(`/admin/users/${id}/status`, { method: 'POST', body: { status }, auth: true }),
   adminSetPoints: (id, payload) =>
     request(`/admin/users/${id}/points`, { method: 'POST', body: payload, auth: true }),
   adminLinkCard: (id, card_key) =>

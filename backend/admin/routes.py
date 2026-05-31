@@ -104,11 +104,16 @@ def stats():
 @require_admin
 def list_users():
     q = (request.args.get("q") or "").strip()
+    status = (request.args.get("status") or "").strip()
     page, size = _page_args()
     query = User.query
     if q:
         like = f"%{q}%"
-        query = query.filter(User.phone.like(like) | User.nickname.like(like))
+        query = query.filter(
+            User.phone.like(like) | User.nickname.like(like) | User.real_name.like(like)
+        )
+    if status in ("pending", "approved", "rejected"):
+        query = query.filter(User.status == status)
     total = query.count()
     rows = (
         query.order_by(User.id.desc())
@@ -118,7 +123,8 @@ def list_users():
         "total": total, "page": page, "size": size,
         "items": [{
             "id": u.id, "phone": u.phone, "nickname": u.nickname,
-            "role": u.role, "points": u.points, "card_id": u.card_id,
+            "role": u.role, "status": u.status, "points": u.points, "card_id": u.card_id,
+            "real_name": u.real_name, "grade": u.grade, "major": u.reg_major,
             "created_at": u.created_at.isoformat() if u.created_at else None,
             "last_login_at": u.last_login_at.isoformat() if u.last_login_at else None,
         } for u in rows],
@@ -162,6 +168,22 @@ def adjust_points(uid):
         return fail(ERR_PARAM, "需提供 set 或 delta")
     db.session.commit()
     return ok({"id": u.id, "points": u.points})
+
+
+@admin_bp.post("/users/<int:uid>/status")
+@require_admin
+def set_user_status(uid):
+    """审核注册用户:approved(通过)/ rejected(拒绝)/ pending(打回待审)。"""
+    u = User.query.get(uid)
+    if u is None:
+        return fail(ERR_PARAM, "用户不存在")
+    body = request.get_json(silent=True) or {}
+    st = (body.get("status") or "").strip()
+    if st not in ("pending", "approved", "rejected"):
+        return fail(ERR_PARAM, "status 仅支持 pending/approved/rejected")
+    u.status = st
+    db.session.commit()
+    return ok({"id": u.id, "status": u.status})
 
 
 @admin_bp.post("/users/<int:uid>/link-card")

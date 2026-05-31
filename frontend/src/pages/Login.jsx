@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { api, setTokens, getToken } from '../api'
 
 // 三种模式:验证码登录(新号自动注册) / 密码登录 / 忘记密码重置。
@@ -147,6 +147,12 @@ export default function Login() {
             {submitLabel}
           </button>
         </form>
+
+        {!logged && (
+          <Link to="/register" className="mt-4 block text-center text-xs text-school-dark">
+            没有账号? <span className="underline font-semibold">去注册</span>
+          </Link>
+        )}
 
         {logged && (
           <button

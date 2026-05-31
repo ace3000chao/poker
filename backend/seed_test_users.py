@@ -110,12 +110,14 @@ def main():
 
             user = User.query.filter_by(phone=phone).first()
             if user is None:
-                user = User(phone=phone, role=role, points=0)
+                user = User(phone=phone, role=role, points=0, status="approved")
                 user.set_password(password)
                 db.session.add(user)
                 results.append((phone, password, role, "新建"))
             else:
                 changed = []
+                if user.status != "approved":
+                    user.status = "approved"; changed.append("置为已通过")
                 if user.role != role and role == "admin":
                     user.role = "admin"; changed.append("提权admin")
                 if opts["reset"]:

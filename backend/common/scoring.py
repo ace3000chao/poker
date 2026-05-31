@@ -46,6 +46,13 @@ def get_enabled_game(game_key):
     return game, config
 
 
+def _require_approved(user):
+    """游戏需账号审核通过(管理员/校友默认已通过)。集中在此,无需改各插件。"""
+    from errors import ERR_ACCOUNT_PENDING
+    if getattr(user, "role", None) != "admin" and getattr(user, "status", "approved") != "approved":
+        raise ScoringError(ERR_ACCOUNT_PENDING)
+
+
 def _today_count(user_id, game_db_id):
     return DailyGameCount.query.filter_by(
         user_id=user_id, game_id=game_db_id, game_date=date.today()
@@ -64,6 +71,7 @@ def check_daily_limit(user, game, config):
 
 
 def check_availability(user, game_key):
+    _require_approved(user)
     game, config = get_enabled_game(game_key)
     check_daily_limit(user, game, config)
     return {
@@ -81,6 +89,7 @@ def start_session(user, game_key):
     跳过 /play 直接刷 /score —— 若额度只在 /play 扣,/score 不校验,
     就能无限刷分。现在额度在结算路径强制并原子扣减。
     """
+    _require_approved(user)
     game, config = get_enabled_game(game_key)
     check_daily_limit(user, game, config)
     return config
@@ -122,6 +131,7 @@ def submit_score(user, game_key, payload):
     """
     from errors import ERR_SCORE_TOO_FAST, ERR_PARAM
 
+    _require_approved(user)
     game, config = get_enabled_game(game_key)
 
     # 每日上限在结算路径强制(堵住跳过 /play 直接刷分)

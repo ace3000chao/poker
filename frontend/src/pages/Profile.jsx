@@ -50,8 +50,12 @@ export default function Profile() {
     return <p className="p-8 text-center text-school animate-pulse">加载中…</p>
   }
 
-  const badge = ROLE_BADGE[p.role] || ROLE_BADGE.user
-  const name = p.nickname || `用户${p.id}`
+  const badge = p.status === 'pending'
+    ? { label: '待审核', cls: 'bg-white/25 text-white' }
+    : p.status === 'rejected'
+      ? { label: '审核未通过', cls: 'bg-white/25 text-white' }
+      : (ROLE_BADGE[p.role] || ROLE_BADGE.user)
+  const name = p.nickname || p.real_name || `用户${p.id}`
 
   return (
     <div className="max-w-sm mx-auto p-4 animate-pageIn">
@@ -99,6 +103,18 @@ export default function Profile() {
 
           <h1 className="mt-3 text-xl font-extrabold text-school-deep">{name}</h1>
           <p className="text-sm text-slate-400">{maskPhone(p.phone)}</p>
+
+          {p.status === 'pending' && (
+            <div className="mt-3 rounded-xl bg-gold/10 text-gold-dark text-xs p-3 leading-relaxed">
+              ⏳ 资料审核中:通过后可查看校友详情、进入游戏。<br />
+              已提交:{[p.real_name, p.grade, p.major].filter(Boolean).join(' · ')}
+            </div>
+          )}
+          {p.status === 'rejected' && (
+            <div className="mt-3 rounded-xl bg-schoolred/10 text-schoolred-dark text-xs p-3">
+              很抱歉,注册未通过审核,如有疑问请联系管理员。
+            </div>
+          )}
 
           <div className="mt-4 flex items-center gap-4">
             <div>

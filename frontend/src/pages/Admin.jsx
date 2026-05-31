@@ -110,49 +110,73 @@ function Stats() {
 /* ---------------- 用户 ---------------- */
 function Users() {
   const [q, setQ] = useState('')
+  const [status, setStatus] = useState('') // '' 全部 | 'pending'
   const [data, setData] = useState({ items: [], total: 0 })
-  const load = useCallback((kw) => api.adminUsers(kw).then(setData).catch(() => {}), [])
-  useEffect(() => { load('') }, [load])
+  const load = useCallback((kw, st) => api.adminUsers(kw, 1, st).then(setData).catch(() => {}), [])
+  useEffect(() => { load('', '') }, [load])
 
   async function adjust(u) {
     const v = window.prompt(`设置 ${u.phone} 的积分(当前 ${u.points}):`, u.points)
     if (v == null) return
-    try {
-      await api.adminSetPoints(u.id, { set: parseInt(v, 10) })
-      load(q)
-    } catch (e) { alert(e.message) }
+    try { await api.adminSetPoints(u.id, { set: parseInt(v, 10) }); load(q, status) }
+    catch (e) { alert(e.message) }
   }
 
   async function linkCard(u) {
     const v = window.prompt(
-      `关联校友牌 card_key(如 spades_A);留空则解除关联。\n当前:${u.card_id ? '已关联 #' + u.card_id : '未关联'}`,
-      '',
+      `关联校友牌 card_key(如 spades_A);留空则解除关联。\n当前:${u.card_id ? '已关联 #' + u.card_id : '未关联'}`, '',
     )
     if (v == null) return
-    try {
-      await api.adminLinkCard(u.id, v.trim())
-      load(q)
-    } catch (e) { alert(e.message) }
+    try { await api.adminLinkCard(u.id, v.trim()); load(q, status) }
+    catch (e) { alert(e.message) }
   }
+
+  async function setStat(u, st) {
+    if (!window.confirm(`确定将 ${u.real_name || u.phone} 的注册「${st === 'approved' ? '通过' : '拒绝'}」?`)) return
+    try { await api.adminSetUserStatus(u.id, st); load(q, status) }
+    catch (e) { alert(e.message) }
+  }
+
+  const SB = {
+    pending: ['待审核', 'bg-gold/20 text-gold-dark'],
+    rejected: ['已拒绝', 'bg-schoolred/15 text-schoolred-dark'],
+  }
+  const chip = (on) =>
+    `px-3 py-1.5 rounded-full text-xs font-semibold ${on ? 'bg-school text-white' : 'bg-white text-school-dark shadow-card'}`
+
   return (
     <div className="p-4">
-      <form onSubmit={(e) => { e.preventDefault(); load(q) }} className="flex gap-2 mb-3">
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="搜索手机号/昵称"
+      <div className="flex gap-2 mb-3">
+        <button onClick={() => { setStatus(''); load(q, '') }} className={chip(status === '')}>全部</button>
+        <button onClick={() => { setStatus('pending'); load(q, 'pending') }} className={chip(status === 'pending')}>待审核</button>
+      </div>
+      <form onSubmit={(e) => { e.preventDefault(); load(q, status) }} className="flex gap-2 mb-3">
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="搜索手机号 / 姓名 / 昵称"
           className="flex-1 px-3 py-2 rounded-lg bg-white shadow-card text-sm outline-none" />
         <button className="px-4 rounded-lg bg-school text-white text-sm">搜索</button>
       </form>
-      <div className="bg-white rounded-2xl shadow-card overflow-hidden text-sm">
-        <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-4 py-2 bg-school-light text-school-dark font-semibold text-xs">
-          <span>手机号 / 角色</span><span>积分</span><span>操作</span>
-        </div>
+      <div className="bg-white rounded-2xl shadow-card overflow-hidden text-sm divide-y divide-school/10">
         {data.items.map((u) => (
-          <div key={u.id} className="grid grid-cols-[1fr_auto_auto] gap-2 px-4 py-2.5 border-t border-school/10 items-center">
-            <span>{u.phone}
-              {u.role === 'admin' && <em className="ml-2 not-italic text-[10px] px-1.5 py-0.5 rounded bg-schoolred text-white">管理员</em>}
-              {u.card_id && <em className="ml-2 not-italic text-[10px] px-1.5 py-0.5 rounded bg-gold/20 text-gold-dark">校友</em>}
-            </span>
-            <span className="text-school font-semibold">{u.points}</span>
-            <div className="flex gap-2.5 text-xs">
+          <div key={u.id} className="px-4 py-2.5">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-school-deep">{u.real_name || u.phone}</span>
+              {u.role === 'admin' && <em className="not-italic text-[10px] px-1.5 py-0.5 rounded bg-schoolred text-white">管理员</em>}
+              {u.card_id && <em className="not-italic text-[10px] px-1.5 py-0.5 rounded bg-gold/20 text-gold-dark">校友</em>}
+              {u.status !== 'approved' && SB[u.status] && (
+                <em className={`not-italic text-[10px] px-1.5 py-0.5 rounded ${SB[u.status][1]}`}>{SB[u.status][0]}</em>
+              )}
+              <span className="ml-auto text-school font-semibold text-xs">{u.points} 分</span>
+            </div>
+            <div className="text-[11px] text-slate-400 mt-0.5">
+              {u.phone}{u.real_name && ` · ${u.grade || ''} ${u.major || ''}`.trimEnd()}
+            </div>
+            <div className="flex gap-3 text-xs mt-1.5">
+              {u.status === 'pending' && (
+                <>
+                  <button onClick={() => setStat(u, 'approved')} className="text-school font-semibold">✓ 通过</button>
+                  <button onClick={() => setStat(u, 'rejected')} className="text-schoolred">✕ 拒绝</button>
+                </>
+              )}
               <button onClick={() => adjust(u)} className="text-school underline">调积分</button>
               <button onClick={() => linkCard(u)} className="text-gold-dark underline">校友牌</button>
             </div>
