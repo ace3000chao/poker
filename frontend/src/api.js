@@ -82,8 +82,6 @@ export const api = {
     request(`/games/${gameId}/score`, { method: 'POST', body: payload, auth: true }),
 
   // ---- 管理后台 ----
-  adminLogin: (phone, password) =>
-    request('/auth/admin-login', { method: 'POST', body: { phone, password } }),
   adminStats: () => request('/admin/stats', { auth: true }),
   adminUsers: (q = '', page = 1) =>
     request(`/admin/users?q=${encodeURIComponent(q)}&page=${page}&size=20`, { auth: true }),

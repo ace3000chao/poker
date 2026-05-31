@@ -50,7 +50,11 @@ function AdminLogin({ onOk }) {
     e.preventDefault()
     setMsg('')
     try {
-      const d = await api.adminLogin(phone, pwd)
+      const d = await api.loginPassword(phone, pwd)
+      if (d.user?.role !== 'admin') {
+        setMsg('该账号无管理员权限')
+        return
+      }
       setToken(d.access_token)
       onOk()
     } catch (e) {
@@ -65,10 +69,10 @@ function AdminLogin({ onOk }) {
         </div>
         <div className="p-6">
           <h1 className="text-lg font-extrabold text-school-deep">管理后台</h1>
-          <p className="text-xs text-slate-400 mb-5">临时口令登录(短信开通后改为验证码)</p>
+          <p className="text-xs text-slate-400 mb-5">管理员手机号 + 密码登录</p>
           <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="管理员手机号"
             className="w-full mb-3 px-4 py-2.5 rounded-xl bg-school-light text-sm outline-none focus:ring-2 focus:ring-school" />
-          <input value={pwd} onChange={(e) => setPwd(e.target.value)} type="password" placeholder="临时口令"
+          <input value={pwd} onChange={(e) => setPwd(e.target.value)} type="password" placeholder="密码"
             className="w-full mb-4 px-4 py-2.5 rounded-xl bg-school-light text-sm outline-none focus:ring-2 focus:ring-school" />
           <button className="w-full py-2.5 rounded-xl bg-school text-white font-semibold hover:bg-school-dark transition">
             登录
