@@ -1,0 +1,22 @@
+{
+  "id": "spider_solitaire",
+  "name": "蜘蛛纸牌",
+  "version": "1.0.0",
+  "description": "中等难度：用黑桃和红心两色牌完成全部8个K-A序列",
+  "icon": "static/icon.png",
+  "enabled": true,
+  "settings": {
+    "max_daily_games": 10,
+    "points_per_win": 50,
+    "points_per_loss": 10,
+    "time_limit_seconds": 1200
+  },
+  "score_schema": {
+    "score": "integer",
+    "duration": "integer",
+    "timestamp": "string",
+    "is_win": "boolean",
+    "completed_sequences": "integer",
+    "moves": "integer"
+  }
+}

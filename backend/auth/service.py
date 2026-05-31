@@ -27,6 +27,20 @@ def is_valid_phone(phone):
     return bool(phone) and bool(PHONE_RE.match(phone))
 
 
+PASSWORD_MIN_LEN = 8
+
+
+def is_valid_password(raw):
+    """密码强度:≥8 位、同时含字母与数字,且不超过 bcrypt 的 72 字节上限。"""
+    if not raw or len(raw) < PASSWORD_MIN_LEN:
+        return False
+    if len(raw.encode("utf-8")) > 72:
+        return False
+    has_letter = any(c.isalpha() for c in raw)
+    has_digit = any(c.isdigit() for c in raw)
+    return has_letter and has_digit
+
+
 # ---------- 发送验证码 ----------
 
 def can_send_code(phone, purpose):

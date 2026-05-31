@@ -1,0 +1,21 @@
+{
+  "id": "clock",
+  "name": "时钟纸牌",
+  "version": "1.0.0",
+  "description": "纯运气翻牌游戏！牌摆成时钟形状，每次翻牌决定下一个钟点，挑战全部翻完",
+  "icon": "static/icon.png",
+  "enabled": true,
+  "settings": {
+    "max_daily_games": 10,
+    "points_per_win": 100,
+    "points_per_loss": 10,
+    "time_limit_seconds": 300
+  },
+  "score_schema": {
+    "score": "integer",
+    "duration": "integer",
+    "timestamp": "string",
+    "is_win": "boolean",
+    "cards_revealed": "integer"
+  }
+}

@@ -7,7 +7,6 @@ from datetime import datetime, date, timedelta
 
 from extensions import db
 from models import Game, GameScore, DailyGameCount, User
-from games.registry import get_game_config
 
 SCORE_MIN_INTERVAL = timedelta(seconds=10)  # Q1: 42903 上报最小间隔
 
@@ -34,6 +33,7 @@ def get_enabled_game(game_key):
         raise ScoringError(ERR_GAME_NOT_FOUND)
     if not game.is_enabled:
         raise ScoringError(ERR_GAME_OFFLINE)
+    from games.registry import get_game_config
     config = get_game_config(game_key)
     if config is None:
         raise ScoringError(ERR_GAME_NOT_FOUND)
@@ -54,6 +54,17 @@ def check_daily_limit(user, game, config):
     row = _today_count(user.id, game.id)
     if row and row.play_count >= limit:
         raise ScoringError(ERR_DAILY_LIMIT)
+
+
+
+def check_availability(user, game_key):
+    game, config = get_enabled_game(game_key)
+    check_daily_limit(user, game, config)
+    return {
+        "game_id": game_key,
+        "can_play": True,
+        "daily_limit": config.get("settings", {}).get("max_daily_games", 10),
+    }
 
 
 def start_session(user, game_key):

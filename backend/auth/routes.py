@@ -12,6 +12,7 @@ from errors import (
     ERR_PARAM, ERR_SMS_TOO_FREQUENT, ERR_ACCOUNT_LOCKED,
     ERR_CODE_WRONG, ERR_CODE_EXPIRED, ERR_CODE_USED, ERR_CODE_PURPOSE,
     ERR_REFRESH_INVALID,
+    ERR_PASSWORD_WRONG, ERR_PASSWORD_WEAK, ERR_OLD_PASSWORD_WRONG,
 )
 from extensions import db
 from models import User
@@ -35,9 +36,8 @@ def send_code():
 
     if not service.is_valid_phone(phone):
         return fail(ERR_PARAM, "手机号格式错误")
-    # Q3:MVP 不做密码找回
-    if purpose not in ("login", "register"):
-        return fail(ERR_CODE_PURPOSE, "MVP 仅支持 login/register")
+    if purpose not in ("login", "register", "reset_password"):
+        return fail(ERR_CODE_PURPOSE, "仅支持 login/register/reset_password")
 
     allowed, retry_after = service.can_send_code(phone, purpose)
     if not allowed:
@@ -122,6 +122,104 @@ def admin_login():
     return ok({
         **tokens,
         "user": {"id": user.id, "phone": user.phone, "role": user.role},
+    })
+
+
+@auth_bp.post("/login-password")
+def login_password():
+    """手机号 + 密码登录。失败按统一「密码错误」回应,不泄露账号是否存在。"""
+    body = request.get_json(silent=True) or {}
+    phone = (body.get("phone") or "").strip()
+    password = body.get("password") or ""
+    ip = _client_ip()
+
+    if not service.is_valid_phone(phone) or not password:
+        return fail(ERR_PARAM, "手机号或密码格式错误")
+
+    # Q5:登录锁定独立判断(与验证码登录共用失败计数)
+    if service.is_locked(phone):
+        return fail(ERR_ACCOUNT_LOCKED)
+
+    user = User.query.filter_by(phone=phone).first()
+    if user is None or not user.check_password(password):
+        service.record_attempt(phone, success=False, ip=ip)
+        return fail(ERR_PASSWORD_WRONG)
+
+    service.record_attempt(phone, success=True, ip=ip)
+    tokens = service.issue_tokens(user)
+    return ok({
+        **tokens,
+        "user": {
+            "id": user.id,
+            "phone": user.phone,
+            "role": user.role,
+            "points": user.points,
+            "nickname": user.nickname,
+        },
+    })
+
+
+@auth_bp.post("/set-password")
+@require_auth
+def set_password():
+    """登录态下设置 / 修改自己的密码。
+
+    首次设置(尚无密码)无需原密码;已设置过则必须校验 old_password。
+    """
+    body = request.get_json(silent=True) or {}
+    new_password = body.get("new_password") or ""
+    old_password = body.get("old_password") or ""
+    user = g.current_user
+
+    if not service.is_valid_password(new_password):
+        return fail(ERR_PASSWORD_WEAK)
+    if user.has_password() and not user.check_password(old_password):
+        return fail(ERR_OLD_PASSWORD_WRONG)
+
+    user.set_password(new_password)
+    db.session.commit()
+    return ok({"has_password": True})
+
+
+@auth_bp.post("/reset-password")
+def reset_password():
+    """凭 reset_password 验证码重置密码(忘记密码),成功后直接签发令牌。"""
+    body = request.get_json(silent=True) or {}
+    phone = (body.get("phone") or "").strip()
+    code = (body.get("code") or "").strip()
+    new_password = body.get("new_password") or ""
+    ip = _client_ip()
+
+    if not service.is_valid_phone(phone) or not code:
+        return fail(ERR_PARAM, "手机号或验证码格式错误")
+    if not service.is_valid_password(new_password):
+        return fail(ERR_PASSWORD_WEAK)
+
+    status, record = service.verify_code(phone, code, "reset_password")
+    if status != service.CODE_OK:
+        return fail({
+            service.CODE_NOT_FOUND: ERR_CODE_WRONG,
+            service.CODE_WRONG: ERR_CODE_WRONG,
+            service.CODE_EXPIRED: ERR_CODE_EXPIRED,
+            service.CODE_USED: ERR_CODE_USED,
+        }[status])
+
+    record.is_used = True
+    user = service.get_or_create_user(phone)
+    user.set_password(new_password)
+    db.session.commit()
+    service.record_attempt(phone, success=True, ip=ip)
+
+    tokens = service.issue_tokens(user)
+    return ok({
+        **tokens,
+        "user": {
+            "id": user.id,
+            "phone": user.phone,
+            "role": user.role,
+            "points": user.points,
+            "nickname": user.nickname,
+        },
     })
 
 

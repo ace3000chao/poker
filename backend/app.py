@@ -11,6 +11,16 @@ from extensions import db, migrate
 from errors import ok
 from games.registry import register_games, sync_games_to_db
 
+PUBLIC_GAME_IDS = (
+    "spider_solitaire",
+    "klondike",
+    "freecell",
+    "pyramid",
+    "tripeaks",
+    "golf",
+    "clock",
+)
+
 
 def create_app(config_object=None):
     app = Flask(__name__)
@@ -72,6 +82,22 @@ def register_health(app):
         from models import AppSetting
         row = AppSetting.query.get("card_back_url")
         return ok({"card_back_url": row.value if row else None})
+
+    @app.get("/api/games")
+    def public_games():
+        """公开可用游戏列表（仅正式接入前端且已上架）。"""
+        from models import Game
+        rows = (
+            Game.query.filter(Game.is_enabled.is_(True), Game.game_id.in_(PUBLIC_GAME_IDS))
+            .order_by(Game.id.asc())
+            .all()
+        )
+        return ok({"items": [{
+            "game_id": g.game_id,
+            "name": g.name,
+            "description": g.description,
+            "icon": f"/api/games/{g.game_id}/static/icon.png",
+        } for g in rows]})
 
 
 def register_blueprints(app):

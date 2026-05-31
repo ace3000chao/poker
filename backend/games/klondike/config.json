@@ -1,0 +1,23 @@
+{
+  "id": "klondike",
+  "name": "经典克朗代克",
+  "version": "1.0.0",
+  "description": "最经典的 Solitaire 玩法，翻牌建堆，以花色收集全部 52 张牌",
+  "icon": "static/icon.png",
+  "enabled": true,
+  "settings": {
+    "max_daily_games": 10,
+    "points_per_win": 50,
+    "points_per_loss": 10,
+    "time_limit_seconds": 900
+  },
+  "score_schema": {
+    "score": "integer",
+    "duration": "integer",
+    "timestamp": "string",
+    "is_win": "boolean",
+    "moves": "integer",
+    "draw_mode": "integer",
+    "stock_resets": "integer"
+  }
+}
