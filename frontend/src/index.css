@@ -51,6 +51,15 @@ body {
   animation: pageIn 0.3s ease both;
 }
 
+/* 好牌型金色庆祝光晕 */
+@keyframes goldGlow {
+  0%, 100% { box-shadow: 0 0 10px 2px rgba(232, 179, 58, 0.45); }
+  50%      { box-shadow: 0 0 22px 6px rgba(232, 179, 58, 0.85); }
+}
+.gold-glow {
+  animation: goldGlow 1.4s ease-in-out infinite;
+}
+
 @keyframes cardIn {
   from {
     opacity: 0;

@@ -33,6 +33,7 @@ def card_brief(c):
         "suit": c.suit,
         "rank": c.rank,
         "alumni_name": c.alumni_name,
+        "graduation_year": c.graduation_year,
         "company_name": c.company_name,
         "position": c.position,
         "industry": c.industry,
