@@ -17,6 +17,11 @@ export default {
           DEFAULT: '#E1232B',
           dark: '#B81B22',
         },
+        // 王牌金(大小王 / 排行榜荣誉色)
+        gold: {
+          DEFAULT: '#E8B33A',
+          dark: '#C8922A',
+        },
         // 扑克花色:红=校徽红系,黑=校徽蓝系(贴合 logo 的红蓝双色)
         hearts: '#E1232B',
         diamonds: '#E1232B',

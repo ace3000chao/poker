@@ -30,8 +30,15 @@ export default function ChangePassword() {
     'w-full px-4 py-2.5 rounded-xl bg-school-light text-sm outline-none focus:ring-2 focus:ring-school'
 
   return (
-    <div className="max-w-xs mx-auto p-6 mt-8">
+    <div className="max-w-xs mx-auto p-6 mt-8 animate-pageIn">
       <div className="rounded-3xl bg-white shadow-card p-6">
+        <div className="-mx-6 -mt-6 mb-5 px-6 py-4 bg-gradient-to-r from-school to-school-dark rounded-t-3xl">
+          <img
+            src="/logo-zspt-white.png"
+            alt="中山职业技术学院"
+            className="h-8 w-auto object-contain"
+          />
+        </div>
         <h1 className="text-lg font-extrabold text-school-deep">设置 / 修改密码</h1>
         <p className="text-xs text-slate-400 mb-5">首次设置可将「原密码」留空</p>
 

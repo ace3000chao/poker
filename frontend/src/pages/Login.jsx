@@ -54,7 +54,9 @@ export default function Login() {
       type="button"
       onClick={() => { setMode(key); setMsg('') }}
       className={`flex-1 py-1.5 text-xs rounded-lg font-medium transition ${
-        mode === key ? 'bg-school text-white' : 'bg-school-light text-school-dark'
+        mode === key
+          ? 'bg-school text-white shadow-sm'
+          : 'bg-school-light text-school-dark'
       }`}
     >
       {label}
@@ -73,7 +75,7 @@ export default function Login() {
     mode === 'code' ? '登录' : mode === 'password' ? '登录' : '重置并登录'
 
   return (
-    <div className="max-w-xs mx-auto p-6 mt-8">
+    <div className="max-w-xs mx-auto p-6 mt-8 animate-pageIn">
       <div className="rounded-3xl bg-white shadow-card p-6">
         <div className="-mx-6 -mt-6 mb-5 px-6 py-4 bg-gradient-to-r from-school to-school-dark rounded-t-3xl">
           <img

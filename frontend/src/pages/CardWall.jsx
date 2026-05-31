@@ -110,9 +110,11 @@ export default function CardWall() {
       {/* 牌墙 */}
       <div className="max-w-screen-md mx-auto px-4 mt-6">
         {loading && (
-          <p className="text-center text-school py-12 animate-pulse">
-            正在翻开扑克牌…
-          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="skeleton aspect-[5/7] rounded-2xl" />
+            ))}
+          </div>
         )}
         {error && <p className="text-center text-schoolred py-12">{error}</p>}
 

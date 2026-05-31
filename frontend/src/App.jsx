@@ -54,7 +54,7 @@ export default function App() {
         </header>
       )}
 
-      <main className="flex-1 pb-16">
+      <main className="flex-1 pb-nav">
         <Routes>
           <Route path="/" element={<CardWall />} />
           <Route path="/card/:key" element={<CardDetail />} />
@@ -74,7 +74,9 @@ export default function App() {
         </Routes>
       </main>
 
-      <nav className="fixed bottom-0 inset-x-0 bg-white border-t border-school/15 flex text-xs text-center shadow-[0_-4px_16px_-8px_rgba(0,58,102,0.18)]">
+      <nav className="fixed bottom-0 inset-x-0 z-20 flex text-[11px] text-center
+                      bg-white/95 backdrop-blur border-t border-school/10
+                      shadow-[0_-4px_16px_-8px_rgba(0,58,102,0.18)] safe-bottom">
         {[
           { to: '/', label: '牌墙', icon: '♠' },
           { to: '/games', label: '游戏', icon: '🎮' },
@@ -88,12 +90,17 @@ export default function App() {
             <Link
               key={t.to}
               to={t.to}
-              className={`flex-1 py-2.5 ${
-                active ? 'text-school font-semibold' : 'text-slate-400'
-              }`}
+              className="relative flex-1 py-2 flex flex-col items-center gap-0.5"
             >
-              <div className={`text-base ${active ? 'text-school' : ''}`}>{t.icon}</div>
-              {t.label}
+              {active && (
+                <span className="absolute top-0 h-0.5 w-8 rounded-full bg-school" />
+              )}
+              <span className={`text-lg leading-none transition-colors ${active ? 'text-school' : 'text-slate-400'}`}>
+                {t.icon}
+              </span>
+              <span className={active ? 'text-school font-semibold' : 'text-slate-400'}>
+                {t.label}
+              </span>
             </Link>
           )
         })}

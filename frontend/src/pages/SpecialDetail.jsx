@@ -47,7 +47,7 @@ export default function SpecialDetail() {
   const isKing = card.type === 'king'
 
   return (
-    <div className="max-w-screen-sm mx-auto p-4">
+    <div className="max-w-screen-sm mx-auto p-4 animate-pageIn">
       <div className="relative rounded-3xl overflow-hidden shadow-cardHover
                       bg-gradient-to-br from-school-deep via-school to-school-dark
                       text-white ring-2 ring-[#E8B33A]/70">

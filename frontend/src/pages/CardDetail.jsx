@@ -48,8 +48,10 @@ export default function CardDetail() {
   const color = SUIT_COLOR[card.suit] || 'text-school'
   const name = card.alumni_name?.replace(/【占位】/, '')
 
+  const metaLine = [card.position, card.company_name].filter(Boolean).join(' · ')
+
   return (
-    <div className="max-w-screen-sm mx-auto p-4">
+    <div className="max-w-screen-sm mx-auto p-4 animate-pageIn">
       {/* 牌面头卡 */}
       <div className="relative rounded-3xl bg-white shadow-card overflow-hidden">
         <div className="h-2 bg-gradient-to-r from-school to-school-mid" />
@@ -77,12 +79,12 @@ export default function CardDetail() {
             </div>
           )}
           <h1 className="mt-3 text-xl font-extrabold text-school-deep">{name}</h1>
-          <p className="text-sm text-slate-500">
-            {card.position} · {card.company_name}
-          </p>
-          <span className="mt-2 text-xs px-3 py-1 rounded-full bg-school-light text-school-dark">
-            {sym} {card.industry}
-          </span>
+          {metaLine && <p className="text-sm text-slate-500">{metaLine}</p>}
+          {card.industry && (
+            <span className="mt-2 text-xs px-3 py-1 rounded-full bg-school-light text-school-dark">
+              {sym} {card.industry}
+            </span>
+          )}
         </div>
 
         {card.business_desc && (
