@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "插件框架最小示例,验证标准接口,非正式玩法",
   "icon": "static/icon.png",
-  "enabled": true,
+  "enabled": false,
   "settings": {
     "max_daily_games": 10,
     "points_per_win": 10,

@@ -1,11 +1,7 @@
 """管理后台路由。所有接口需管理员(require_admin)。"""
 import json
-import os
-import time
-import uuid
 
-from flask import Blueprint, request, current_app
-from werkzeug.utils import secure_filename
+from flask import Blueprint, request
 
 from errors import (
     ok, fail,
@@ -29,6 +25,15 @@ SPECIAL_FIELDS = [
     "title", "subtitle", "logo_url", "card_image_url", "motto", "description",
     "contact_phone", "contact_email", "address", "website_url",
 ]
+ALLOWED_SUITS = {"hearts", "spades", "clubs", "diamonds"}
+ALLOWED_RANKS = {"A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"}
+CARD_INT_FIELDS = {"graduation_year", "founded_year"}
+
+
+def _parse_bool(v):
+    if isinstance(v, bool):
+        return v
+    return str(v).strip().lower() in ("1", "true", "yes", "on")
 
 
 def _page_args():
@@ -49,18 +54,11 @@ def _page_args():
 @require_admin
 def upload_image():
     """上传扑克牌图片,返回可访问 URL。表单字段名 file。"""
-    f = request.files.get("file")
-    if f is None or not f.filename:
-        return fail(ERR_PARAM, "未收到文件(字段名 file)")
-    ext = f.filename.rsplit(".", 1)[-1].lower() if "." in f.filename else ""
-    if ext not in current_app.config["ALLOWED_IMG_EXT"]:
-        return fail(ERR_PARAM, "仅支持 png/jpg/jpeg/webp/gif")
-
-    upload_dir = current_app.config["UPLOAD_DIR"]
-    os.makedirs(upload_dir, exist_ok=True)
-    name = f"{int(time.time())}_{uuid.uuid4().hex[:8]}.{ext}"
-    f.save(os.path.join(upload_dir, secure_filename(name)))
-    return ok({"url": f"/api/uploads/{name}"})
+    from common.uploads import save_image
+    try:
+        return ok({"url": save_image(request.files.get("file"))})
+    except ValueError as e:
+        return fail(ERR_PARAM, str(e))
 
 
 # ---------- 全局设置(统一背面图等) ----------
@@ -115,21 +113,34 @@ def stats():
 @require_admin
 def list_users():
     q = (request.args.get("q") or "").strip()
+    status = (request.args.get("status") or "").strip()
     page, size = _page_args()
     query = User.query
     if q:
         like = f"%{q}%"
-        query = query.filter(User.phone.like(like) | User.nickname.like(like))
+        query = query.filter(
+            User.phone.like(like) | User.nickname.like(like) | User.real_name.like(like)
+        )
+    if status in ("pending", "approved", "rejected"):
+        query = query.filter(User.status == status)
     total = query.count()
     rows = (
         query.order_by(User.id.desc())
         .offset((page - 1) * size).limit(size).all()
     )
+    # 一次查出关联校友牌信息(疑似校友提示),避免 N+1
+    card_ids = [u.card_id for u in rows if u.card_id]
+    cmap = {}
+    if card_ids:
+        for c in Card.query.filter(Card.id.in_(card_ids)).all():
+            cmap[c.id] = {"card_key": c.card_key, "alumni_name": c.alumni_name}
     return ok({
         "total": total, "page": page, "size": size,
         "items": [{
             "id": u.id, "phone": u.phone, "nickname": u.nickname,
-            "role": u.role, "points": u.points,
+            "role": u.role, "status": u.status, "points": u.points, "card_id": u.card_id,
+            "alumni_card": cmap.get(u.card_id),
+            "real_name": u.real_name, "grade": u.grade, "major": u.reg_major,
             "created_at": u.created_at.isoformat() if u.created_at else None,
             "last_login_at": u.last_login_at.isoformat() if u.last_login_at else None,
         } for u in rows],
@@ -175,6 +186,51 @@ def adjust_points(uid):
     return ok({"id": u.id, "points": u.points})
 
 
+@admin_bp.post("/users/<int:uid>/status")
+@require_admin
+def set_user_status(uid):
+    """审核注册用户:approved(通过)/ rejected(拒绝)/ pending(打回待审)。"""
+    u = User.query.get(uid)
+    if u is None:
+        return fail(ERR_PARAM, "用户不存在")
+    if u.role == "admin":
+        return fail(ERR_PARAM, "管理员账号无需审核,无法变更其状态")
+    body = request.get_json(silent=True) or {}
+    st = (body.get("status") or "").strip()
+    if st not in ("pending", "approved", "rejected"):
+        return fail(ERR_PARAM, "status 仅支持 pending/approved/rejected")
+    u.status = st
+    db.session.commit()
+    return ok({"id": u.id, "status": u.status})
+
+
+@admin_bp.post("/users/<int:uid>/link-card")
+@require_admin
+def link_user_card(uid):
+    """手动关联/解除用户与校友牌(给缺电话、自动匹配不到的校友补关联)。
+
+    body: { "card_key": "spades_A" } 关联;{ "card_key": "" } 或缺省则解除。
+    """
+    u = User.query.get(uid)
+    if u is None:
+        return fail(ERR_PARAM, "用户不存在")
+    body = request.get_json(silent=True) or {}
+    key = (body.get("card_key") or "").strip()
+    if not key:
+        u.card_id = None
+        db.session.commit()
+        return ok({"id": u.id, "card_id": None})
+    card = Card.query.filter_by(card_key=key).first()
+    if card is None:
+        return fail(ERR_CARD_NOT_FOUND, "校友牌不存在(card_key 如 spades_A)")
+    u.card_id = card.id
+    db.session.commit()
+    return ok({
+        "id": u.id, "card_id": card.id,
+        "card_key": card.card_key, "alumni_name": card.alumni_name,
+    })
+
+
 # ---------- 扑克牌管理 ----------
 
 @admin_bp.get("/cards")
@@ -193,7 +249,7 @@ def admin_list_cards():
     rows = query.order_by(Card.id.asc()).offset((page - 1) * size).limit(size).all()
     return ok({
         "total": total, "page": page, "size": size,
-        "items": [card_detail(c) for c in rows],
+        "items": [card_detail(c, include_contact=True) for c in rows],
     })
 
 
@@ -207,6 +263,10 @@ def edit_card(cid):
 
     new_suit = body.get("suit", c.suit)
     new_rank = body.get("rank", c.rank)
+    if new_suit not in ALLOWED_SUITS:
+        return fail(ERR_PARAM, "花色仅支持 hearts/spades/clubs/diamonds")
+    if new_rank not in ALLOWED_RANKS:
+        return fail(ERR_PARAM, "点数仅支持 A/2-10/J/Q/K")
     if new_suit != c.suit or new_rank != c.rank:
         new_key = f"{new_suit}_{new_rank}"
         clash = Card.query.filter(
@@ -217,10 +277,23 @@ def edit_card(cid):
         c.card_key = new_key
 
     for f in CARD_FIELDS:
-        if f in body:
-            setattr(c, f, body[f])
+        if f not in body:
+            continue
+        v = body[f]
+        if f in CARD_INT_FIELDS:
+            if v in (None, ""):
+                setattr(c, f, None)
+            else:
+                try:
+                    setattr(c, f, int(v))
+                except (ValueError, TypeError):
+                    return fail(ERR_PARAM, f"{f} 必须为数字")
+        elif f == "is_published":
+            c.is_published = _parse_bool(v)
+        else:
+            setattr(c, f, v)
     db.session.commit()
-    return ok(card_detail(c))
+    return ok(card_detail(c, include_contact=True))
 
 
 # ---------- 特殊牌(大王/小王)管理 ----------
@@ -228,7 +301,7 @@ def edit_card(cid):
 @admin_bp.get("/special-cards")
 @require_admin
 def admin_special():
-    return ok({"items": [special_detail(s) for s in SpecialCard.query.all()]})
+    return ok({"items": [special_detail(s, include_contact=True) for s in SpecialCard.query.all()]})
 
 
 @admin_bp.put("/special-cards/<stype>")
@@ -246,7 +319,7 @@ def edit_special(stype):
         if jf in body:
             setattr(s, jf, json.dumps(body[jf], ensure_ascii=False))
     db.session.commit()
-    return ok(special_detail(s))
+    return ok(special_detail(s, include_contact=True))
 
 
 # ---------- 游戏管理(上下架) ----------

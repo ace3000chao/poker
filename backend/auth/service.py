@@ -27,6 +27,20 @@ def is_valid_phone(phone):
     return bool(phone) and bool(PHONE_RE.match(phone))
 
 
+PASSWORD_MIN_LEN = 8
+
+
+def is_valid_password(raw):
+    """密码强度:≥8 位、同时含字母与数字,且不超过 bcrypt 的 72 字节上限。"""
+    if not raw or len(raw) < PASSWORD_MIN_LEN:
+        return False
+    if len(raw.encode("utf-8")) > 72:
+        return False
+    has_letter = any(c.isalpha() for c in raw)
+    has_digit = any(c.isdigit() for c in raw)
+    return has_letter and has_digit
+
+
 # ---------- 发送验证码 ----------
 
 def can_send_code(phone, purpose):
@@ -127,17 +141,39 @@ def verify_code(phone, code, purpose):
 
 # ---------- 用户与令牌 ----------
 
+def maybe_link_alumni(user):
+    """若用户手机号唯一匹配某张校友牌,自动**关联**(标记疑似校友)。
+
+    注意:手机号未经短信验证,故**不自动通过审核** —— 关联只是给管理员
+    一个"疑似校友"提示,是否通过仍由管理员决定(防止知道手机号者冒充校友)。
+    已关联则跳过(管理员手动关联的不被覆盖)。返回是否新建立关联。
+    """
+    if user.card_id:
+        return False
+    from models import Card
+    cards = Card.query.filter(
+        Card.contact_phone == user.phone, Card.contact_phone.isnot(None)
+    ).limit(2).all()
+    if len(cards) == 1:   # 仅唯一匹配才关联,避免同号多张牌错绑
+        user.card_id = cards[0].id
+        return True
+    return False
+
+
 def get_or_create_user(phone):
     """新手机号首次登录自动注册(Q3)。"""
     user = User.query.filter_by(phone=phone).first()
     if user is None:
         user = User(phone=phone, role="user", points=0)
         db.session.add(user)
-        db.session.commit()
+    maybe_link_alumni(user)
+    db.session.commit()
     return user
 
 
 def issue_tokens(user):
+    # 每次登录都尝试关联校友牌(覆盖密码登录等不经 get_or_create_user 的路径)
+    maybe_link_alumni(user)
     access = issue_access_token(user)
     refresh = issue_refresh_token(user)
     cfg = current_app.config

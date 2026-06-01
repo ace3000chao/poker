@@ -24,6 +24,10 @@ ERR_CODE_WRONG = 40003       # 验证码错误
 ERR_CODE_EXPIRED = 40004     # 验证码已过期
 ERR_CODE_USED = 40005        # 验证码已使用
 ERR_CODE_PURPOSE = 40006     # 验证码用途不匹配
+ERR_PASSWORD_WRONG = 40007       # 手机号或密码错误
+ERR_PASSWORD_NOT_SET = 40008     # 该账号未设置密码
+ERR_PASSWORD_WEAK = 40009        # 密码不符合复杂度要求
+ERR_OLD_PASSWORD_WRONG = 40010   # 原密码错误
 
 # 401xx 认证
 ERR_UNAUTHORIZED = 40101     # 未登录或 Token 无效
@@ -32,6 +36,7 @@ ERR_REFRESH_INVALID = 40103  # Refresh Token 无效或过期
 
 # 403xx 权限
 ERR_FORBIDDEN = 40301        # 无权限(非管理员等)
+ERR_ACCOUNT_PENDING = 40302  # 账号待管理员审核通过
 
 # 404xx 资源
 ERR_GAME_NOT_FOUND = 40401   # 游戏不存在
@@ -52,6 +57,10 @@ ERR_INTERNAL = 50001          # 服务器内部错误
 MESSAGES = {
     OK: "success",
     ERR_PARAM: "参数格式错误",
+    ERR_PASSWORD_WRONG: "手机号或密码错误",
+    ERR_PASSWORD_NOT_SET: "该账号未设置密码,请用验证码登录后设置",
+    ERR_PASSWORD_WEAK: "密码至少 8 位,且需同时包含字母和数字",
+    ERR_OLD_PASSWORD_WRONG: "原密码错误",
     ERR_BUSINESS: "业务逻辑错误",
     ERR_CODE_WRONG: "验证码错误",
     ERR_CODE_EXPIRED: "验证码已过期",
@@ -61,6 +70,7 @@ MESSAGES = {
     ERR_TOKEN_EXPIRED: "Token 已过期",
     ERR_REFRESH_INVALID: "Refresh Token 无效或已过期",
     ERR_FORBIDDEN: "无访问权限",
+    ERR_ACCOUNT_PENDING: "账号待审核,管理员通过后即可使用",
     ERR_GAME_NOT_FOUND: "游戏不存在",
     ERR_GAME_OFFLINE: "游戏已下架",
     ERR_CARD_NOT_FOUND: "扑克牌不存在",

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { api } from '../api'
+import { api, getToken } from '../api'
 
 const SUIT_SYMBOL = { hearts: '♥', spades: '♠', clubs: '♣', diamonds: '♦' }
 const SUIT_COLOR = {
@@ -23,24 +23,40 @@ function Field({ label, value }) {
 export default function CardDetail() {
   const { key } = useParams()
   const [card, setCard] = useState(null)
-  const [error, setError] = useState('')
+  const [err, setErr] = useState(null)
 
   useEffect(() => {
     api
       .getCard(key)
       .then(setCard)
-      .catch((e) => setError(e.message))
+      .catch((e) => setErr(e))
   }, [key])
 
-  if (error)
+  if (err) {
+    // 40101 未登录(游客) / 40302 待审核 / 其它
+    const guest = err.code === 40101
+    const pending = err.code === 40302
     return (
-      <div className="p-8 text-center">
-        <p className="text-schoolred">{error}</p>
-        <Link to="/" className="text-school text-sm underline mt-4 inline-block">
-          返回牌墙
-        </Link>
+      <div className="max-w-sm mx-auto p-8 text-center animate-pageIn">
+        <div className="text-5xl mb-3">{pending ? '⏳' : '🔒'}</div>
+        <h2 className="text-lg font-bold text-school-deep mb-1">
+          {guest ? '登录后查看校友档案' : pending ? '资料审核中' : '无法查看'}
+        </h2>
+        <p className="text-sm text-slate-500 mb-6">
+          {guest
+            ? '校友详情仅对注册用户开放,登录或注册后即可查看'
+            : pending ? '你的注册资料正在审核,通过后即可查看校友详情' : err.message}
+        </p>
+        {guest && (
+          <div className="flex gap-3 justify-center mb-4">
+            <Link to="/login" className="px-6 py-2 rounded-full bg-school text-white text-sm font-semibold">去登录</Link>
+            <Link to="/register" className="px-6 py-2 rounded-full bg-gold/20 text-gold-dark text-sm font-semibold">去注册</Link>
+          </div>
+        )}
+        <Link to="/" className="text-school text-sm underline">返回牌墙</Link>
       </div>
     )
+  }
   if (!card)
     return <p className="p-8 text-center text-school animate-pulse">加载中…</p>
 
@@ -48,8 +64,10 @@ export default function CardDetail() {
   const color = SUIT_COLOR[card.suit] || 'text-school'
   const name = card.alumni_name?.replace(/【占位】/, '')
 
+  const metaLine = [card.position, card.company_name].filter(Boolean).join(' · ')
+
   return (
-    <div className="max-w-screen-sm mx-auto p-4">
+    <div className="max-w-screen-sm mx-auto p-4 animate-pageIn">
       {/* 牌面头卡 */}
       <div className="relative rounded-3xl bg-white shadow-card overflow-hidden">
         <div className="h-2 bg-gradient-to-r from-school to-school-mid" />
@@ -77,12 +95,12 @@ export default function CardDetail() {
             </div>
           )}
           <h1 className="mt-3 text-xl font-extrabold text-school-deep">{name}</h1>
-          <p className="text-sm text-slate-500">
-            {card.position} · {card.company_name}
-          </p>
-          <span className="mt-2 text-xs px-3 py-1 rounded-full bg-school-light text-school-dark">
-            {sym} {card.industry}
-          </span>
+          {metaLine && <p className="text-sm text-slate-500">{metaLine}</p>}
+          {card.industry && (
+            <span className="mt-2 text-xs px-3 py-1 rounded-full bg-school-light text-school-dark">
+              {sym} {card.industry}
+            </span>
+          )}
         </div>
 
         {card.business_desc && (
@@ -104,6 +122,12 @@ export default function CardDetail() {
         <Field label="微信" value={card.wechat} />
         <Field label="邮箱" value={card.email} />
         <Field label="个人感言" value={card.alumni_quote} />
+        {!getToken() && (
+          <p className="pt-3 text-xs text-slate-400">
+            登录后可查看联系方式 ·{' '}
+            <Link to="/login" className="text-school underline">去登录</Link>
+          </p>
+        )}
       </div>
 
       <Link

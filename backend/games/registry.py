@@ -7,6 +7,12 @@ import importlib
 import json
 import os
 
+
+from flask import g
+from errors import ok, fail
+from common.scoring import check_availability, ScoringError
+from auth.decorators import require_auth
+
 GAMES_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -71,6 +77,22 @@ def register_games(app):
             if bp is None:
                 app.logger.warning("游戏 %s 未暴露 bp,跳过", game_id)
                 continue
+            # ---- register shared /check endpoint for every game ----
+            def _make_check_handler(gid):
+                def _handler():
+                    try:
+                        check_availability(g.current_user, gid)
+                        return ok()
+                    except ScoringError as e:
+                        return fail(e.code, e.message)
+                return require_auth(_handler)
+
+            bp.add_url_rule(
+                "/check",
+                f"check_{game_id}",
+                view_func=_make_check_handler(game_id),
+                methods=["POST"],
+            )
             app.register_blueprint(bp, url_prefix=f"/api/games/{game_id}")
             registered.append(game_id)
         except Exception as exc:  # noqa: BLE001 插件隔离,单个失败不影响整体

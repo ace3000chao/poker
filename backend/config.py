@@ -28,10 +28,6 @@ class Config:
     SMS_CODE_TTL = timedelta(minutes=5)      # 验证码有效期
     SMS_RESEND_INTERVAL = timedelta(seconds=60)  # 同号发送间隔
 
-    # 临时管理员登录(短信未开通前的过渡方案,接入短信后应移除/关闭)
-    ADMIN_PHONE = os.environ.get("ADMIN_PHONE", "13424514766")
-    ADMIN_TEMP_PASSWORD = os.environ.get("ADMIN_TEMP_PASSWORD", "ZSPT@wmdwp2026")
-
     # 图片上传(扑克牌正反面)
     UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "/data/poker/uploads")
     MAX_CONTENT_LENGTH = 8 * 1024 * 1024  # 单文件 8MB
@@ -40,6 +36,14 @@ class Config:
     # 登录安全
     LOGIN_MAX_FAIL = 5
     LOGIN_LOCK_DURATION = timedelta(minutes=15)
+
+    # CORS 允许来源(逗号分隔;默认仅测试服 + 本地开发口)
+    CORS_ORIGINS = [
+        o.strip() for o in os.environ.get(
+            "CORS_ORIGINS",
+            "http://106.55.169.208:3005,http://localhost:5173,http://127.0.0.1:5173",
+        ).split(",") if o.strip()
+    ]
 
 
 class DevConfig(Config):

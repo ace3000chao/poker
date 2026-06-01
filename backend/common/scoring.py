@@ -5,9 +5,14 @@
 """
 from datetime import datetime, date, timedelta
 
+from sqlalchemy.exc import IntegrityError
+
 from extensions import db
 from models import Game, GameScore, DailyGameCount, User
-from games.registry import get_game_config
+
+# 成绩上下界(防止异常/恶意值污染排行榜与用户积分)
+MAX_SCORE = 10_000_000
+MAX_DURATION = 86_400  # 一天秒数
 
 SCORE_MIN_INTERVAL = timedelta(seconds=10)  # Q1: 42903 上报最小间隔
 
@@ -34,10 +39,18 @@ def get_enabled_game(game_key):
         raise ScoringError(ERR_GAME_NOT_FOUND)
     if not game.is_enabled:
         raise ScoringError(ERR_GAME_OFFLINE)
+    from games.registry import get_game_config
     config = get_game_config(game_key)
     if config is None:
         raise ScoringError(ERR_GAME_NOT_FOUND)
     return game, config
+
+
+def _require_approved(user):
+    """游戏需账号审核通过(管理员/校友默认已通过)。集中在此,无需改各插件。"""
+    from errors import ERR_ACCOUNT_PENDING
+    if getattr(user, "role", None) != "admin" and getattr(user, "status", "approved") != "approved":
+        raise ScoringError(ERR_ACCOUNT_PENDING)
 
 
 def _today_count(user_id, game_db_id):
@@ -56,20 +69,57 @@ def check_daily_limit(user, game, config):
         raise ScoringError(ERR_DAILY_LIMIT)
 
 
-def start_session(user, game_key):
-    """/play:校验下架与每日次数,次数 +1。"""
+
+def check_availability(user, game_key):
+    _require_approved(user)
     game, config = get_enabled_game(game_key)
     check_daily_limit(user, game, config)
-    row = _today_count(user.id, game.id)
-    if row is None:
-        row = DailyGameCount(
-            user_id=user.id, game_id=game.id,
-            game_date=date.today(), play_count=0,
-        )
-        db.session.add(row)
-    row.play_count += 1
-    db.session.commit()
+    return {
+        "game_id": game_key,
+        "can_play": True,
+        "daily_limit": config.get("settings", {}).get("max_daily_games", 10),
+    }
+
+
+def start_session(user, game_key):
+    """/play:校验下架与每日剩余次数。
+
+    注意:每日次数的**扣减放在 submit_score**(交分时),而非这里。
+    原因:① 开局不交分不应白白消耗额度;② 更重要的是防止客户端
+    跳过 /play 直接刷 /score —— 若额度只在 /play 扣,/score 不校验,
+    就能无限刷分。现在额度在结算路径强制并原子扣减。
+    """
+    _require_approved(user)
+    game, config = get_enabled_game(game_key)
+    check_daily_limit(user, game, config)
     return config
+
+
+def _increment_daily_count(user_id, game_db_id):
+    """原子自增当日计数,避免并发"读-改-写"丢失更新。"""
+    today = date.today()
+    updated = DailyGameCount.query.filter_by(
+        user_id=user_id, game_id=game_db_id, game_date=today
+    ).update(
+        {DailyGameCount.play_count: DailyGameCount.play_count + 1},
+        synchronize_session=False,
+    )
+    if updated:
+        return
+    try:
+        with db.session.begin_nested():
+            db.session.add(DailyGameCount(
+                user_id=user_id, game_id=game_db_id,
+                game_date=today, play_count=1,
+            ))
+    except IntegrityError:
+        # 并发首次插入撞唯一索引:退化为自增
+        DailyGameCount.query.filter_by(
+            user_id=user_id, game_id=game_db_id, game_date=today
+        ).update(
+            {DailyGameCount.play_count: DailyGameCount.play_count + 1},
+            synchronize_session=False,
+        )
 
 
 def submit_score(user, game_key, payload):
@@ -79,9 +129,13 @@ def submit_score(user, game_key, payload):
     缺省按 score>0 视为胜。
     返回 {earned_points, total_points, rank}。
     """
-    from errors import ERR_SCORE_TOO_FAST
+    from errors import ERR_SCORE_TOO_FAST, ERR_PARAM
 
+    _require_approved(user)
     game, config = get_enabled_game(game_key)
+
+    # 每日上限在结算路径强制(堵住跳过 /play 直接刷分)
+    check_daily_limit(user, game, config)
 
     last = (
         GameScore.query.filter_by(user_id=user.id, game_id=game.id)
@@ -91,15 +145,29 @@ def submit_score(user, game_key, payload):
     if last and (_now() - last.played_at) < SCORE_MIN_INTERVAL:
         raise ScoringError(ERR_SCORE_TOO_FAST)
 
+    # 输入校验:非数字 / 负数一律拒绝,并钳制上界,避免污染积分与排行榜
+    try:
+        score = int(payload.get("score", 0))
+        duration = int(payload.get("duration", 0))
+    except (TypeError, ValueError):
+        raise ScoringError(ERR_PARAM)
+    if score < 0 or duration < 0:
+        raise ScoringError(ERR_PARAM)
+    score = min(score, MAX_SCORE)
+    duration = min(duration, MAX_DURATION)
+
     settings = config.get("settings", {})
-    score = int(payload.get("score", 0))
     is_win = payload.get("is_win")
     if is_win is None:
         is_win = score > 0
+    is_win = bool(is_win)
     earned = (
         settings.get("points_per_win", 10) if is_win
         else settings.get("points_per_loss", 2)
     )
+
+    # 原子扣减当日额度(与上面的上限校验共同把刷分封顶到每日上限)
+    _increment_daily_count(user.id, game.id)
 
     import json
     rec = GameScore(
@@ -107,7 +175,7 @@ def submit_score(user, game_key, payload):
         game_id=game.id,
         game_key=game_key,
         score=score,
-        duration=int(payload.get("duration", 0)),
+        duration=duration,
         cards_used=json.dumps(payload.get("cards_used", []), ensure_ascii=False),
         points_earned=earned,
         played_at=_now(),

@@ -4,6 +4,8 @@
 """
 from datetime import datetime
 
+import bcrypt
+
 from extensions import db
 
 
@@ -16,11 +18,21 @@ class User(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     phone = db.Column(db.String(20), unique=True, nullable=False, index=True)
-    # 决策:password_hash 字段保留预留,MVP 不实现密码登录
+    # password_hash:bcrypt 哈希。注册仍走手机号+验证码(无密码),
+    # 用户可后续设置密码以启用「手机号 + 密码」登录(feat/password-login)。
     password_hash = db.Column(db.String(128), nullable=True)
     nickname = db.Column(db.String(50), nullable=True)
-    role = db.Column(db.String(20), default="user")  # user / admin
+    role = db.Column(db.String(20), default="user")  # 权限:user / admin
+    # 注册审核状态:pending(待审核)/ approved(已通过)/ rejected(已拒绝)
+    status = db.Column(db.String(20), default="pending", index=True)
+    # 注册时填写,供管理员核验校友身份
+    real_name = db.Column(db.String(50), nullable=True)
+    grade = db.Column(db.String(20), nullable=True)   # 年级,如 "2015级"
+    reg_major = db.Column(db.String(100), nullable=True)  # 专业(避免与 Card.major 混淆)
     points = db.Column(db.Integer, default=0)
+    avatar_url = db.Column(db.String(500), nullable=True)  # 用户个人头像
+    # 关联的校友牌:非空即"校友扑克用户"(其本人是 52 张牌之一)
+    card_id = db.Column(db.Integer, db.ForeignKey("cards.id"), nullable=True, index=True)
     jwt_token = db.Column(db.Text, nullable=True)
     jwt_expires_at = db.Column(db.DateTime, nullable=True)
     jwt_refresh_token = db.Column(db.Text, nullable=True)
@@ -28,6 +40,23 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=_now)
     updated_at = db.Column(db.DateTime, default=_now, onupdate=_now)
     last_login_at = db.Column(db.DateTime, nullable=True)
+
+    def set_password(self, raw):
+        """用 bcrypt 设置密码哈希。"""
+        self.password_hash = bcrypt.hashpw(
+            raw.encode("utf-8"), bcrypt.gensalt()
+        ).decode("utf-8")
+
+    def check_password(self, raw):
+        """校验明文密码;未设置密码时恒为 False。"""
+        if not self.password_hash:
+            return False
+        return bcrypt.checkpw(
+            raw.encode("utf-8"), self.password_hash.encode("utf-8")
+        )
+
+    def has_password(self):
+        return bool(self.password_hash)
 
 
 class Card(db.Model):

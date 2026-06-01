@@ -1,4 +1,4 @@
-"""鉴权装饰器:require_auth / require_admin。
+"""鉴权装饰器:require_auth / require_approved / require_admin。
 
 从 Authorization: Bearer <access_token> 解析,校验后把 User 挂到 g.current_user。
 错误码遵循全局唯一表(errors.py)。
@@ -7,7 +7,9 @@ from functools import wraps
 
 from flask import request, g
 
-from errors import fail, ERR_UNAUTHORIZED, ERR_TOKEN_EXPIRED, ERR_FORBIDDEN
+from errors import (
+    fail, ERR_UNAUTHORIZED, ERR_TOKEN_EXPIRED, ERR_FORBIDDEN, ERR_ACCOUNT_PENDING,
+)
 from models import User
 from utils.jwt_util import decode_token
 
@@ -34,6 +36,19 @@ def require_auth(fn):
         if user is None:
             return fail(ERR_UNAUTHORIZED)
         g.current_user = user
+        return fn(*args, **kwargs)
+
+    return wrapper
+
+
+def require_approved(fn):
+    """需登录且账号已通过审核(管理员/校友默认已通过)。"""
+    @wraps(fn)
+    @require_auth
+    def wrapper(*args, **kwargs):
+        u = g.current_user
+        if u.role != "admin" and u.status != "approved":
+            return fail(ERR_ACCOUNT_PENDING)
         return fn(*args, **kwargs)
 
     return wrapper
