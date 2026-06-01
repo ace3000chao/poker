@@ -170,6 +170,11 @@ function Users() {
             <div className="text-[11px] text-slate-400 mt-0.5">
               {u.phone}{u.real_name && ` · ${u.grade || ''} ${u.major || ''}`.trimEnd()}
             </div>
+            {u.alumni_card && (
+              <div className="text-[11px] text-gold-dark mt-0.5">
+                疑似校友:{u.alumni_card.card_key} · {u.alumni_card.alumni_name}
+              </div>
+            )}
             <div className="flex gap-3 text-xs mt-1.5">
               {u.status === 'pending' && (
                 <>

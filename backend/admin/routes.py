@@ -25,6 +25,15 @@ SPECIAL_FIELDS = [
     "title", "subtitle", "logo_url", "card_image_url", "motto", "description",
     "contact_phone", "contact_email", "address", "website_url",
 ]
+ALLOWED_SUITS = {"hearts", "spades", "clubs", "diamonds"}
+ALLOWED_RANKS = {"A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"}
+CARD_INT_FIELDS = {"graduation_year", "founded_year"}
+
+
+def _parse_bool(v):
+    if isinstance(v, bool):
+        return v
+    return str(v).strip().lower() in ("1", "true", "yes", "on")
 
 
 def _page_args():
@@ -119,11 +128,18 @@ def list_users():
         query.order_by(User.id.desc())
         .offset((page - 1) * size).limit(size).all()
     )
+    # 一次查出关联校友牌信息(疑似校友提示),避免 N+1
+    card_ids = [u.card_id for u in rows if u.card_id]
+    cmap = {}
+    if card_ids:
+        for c in Card.query.filter(Card.id.in_(card_ids)).all():
+            cmap[c.id] = {"card_key": c.card_key, "alumni_name": c.alumni_name}
     return ok({
         "total": total, "page": page, "size": size,
         "items": [{
             "id": u.id, "phone": u.phone, "nickname": u.nickname,
             "role": u.role, "status": u.status, "points": u.points, "card_id": u.card_id,
+            "alumni_card": cmap.get(u.card_id),
             "real_name": u.real_name, "grade": u.grade, "major": u.reg_major,
             "created_at": u.created_at.isoformat() if u.created_at else None,
             "last_login_at": u.last_login_at.isoformat() if u.last_login_at else None,
@@ -177,6 +193,8 @@ def set_user_status(uid):
     u = User.query.get(uid)
     if u is None:
         return fail(ERR_PARAM, "用户不存在")
+    if u.role == "admin":
+        return fail(ERR_PARAM, "管理员账号无需审核,无法变更其状态")
     body = request.get_json(silent=True) or {}
     st = (body.get("status") or "").strip()
     if st not in ("pending", "approved", "rejected"):
@@ -245,6 +263,10 @@ def edit_card(cid):
 
     new_suit = body.get("suit", c.suit)
     new_rank = body.get("rank", c.rank)
+    if new_suit not in ALLOWED_SUITS:
+        return fail(ERR_PARAM, "花色仅支持 hearts/spades/clubs/diamonds")
+    if new_rank not in ALLOWED_RANKS:
+        return fail(ERR_PARAM, "点数仅支持 A/2-10/J/Q/K")
     if new_suit != c.suit or new_rank != c.rank:
         new_key = f"{new_suit}_{new_rank}"
         clash = Card.query.filter(
@@ -255,8 +277,21 @@ def edit_card(cid):
         c.card_key = new_key
 
     for f in CARD_FIELDS:
-        if f in body:
-            setattr(c, f, body[f])
+        if f not in body:
+            continue
+        v = body[f]
+        if f in CARD_INT_FIELDS:
+            if v in (None, ""):
+                setattr(c, f, None)
+            else:
+                try:
+                    setattr(c, f, int(v))
+                except (ValueError, TypeError):
+                    return fail(ERR_PARAM, f"{f} 必须为数字")
+        elif f == "is_published":
+            c.is_published = _parse_bool(v)
+        else:
+            setattr(c, f, v)
     db.session.commit()
     return ok(card_detail(c, include_contact=True))
 

@@ -142,17 +142,20 @@ def verify_code(phone, code, purpose):
 # ---------- 用户与令牌 ----------
 
 def maybe_link_alumni(user):
-    """若用户手机号匹配某张校友牌的联系电话,自动关联为"校友扑克用户"。
-    已关联则跳过(管理员手动关联的不被覆盖)。返回是否新建立关联。"""
+    """若用户手机号唯一匹配某张校友牌,自动**关联**(标记疑似校友)。
+
+    注意:手机号未经短信验证,故**不自动通过审核** —— 关联只是给管理员
+    一个"疑似校友"提示,是否通过仍由管理员决定(防止知道手机号者冒充校友)。
+    已关联则跳过(管理员手动关联的不被覆盖)。返回是否新建立关联。
+    """
     if user.card_id:
         return False
     from models import Card
-    card = Card.query.filter(
+    cards = Card.query.filter(
         Card.contact_phone == user.phone, Card.contact_phone.isnot(None)
-    ).first()
-    if card:
-        user.card_id = card.id
-        user.status = "approved"   # 校友本人默认通过审核
+    ).limit(2).all()
+    if len(cards) == 1:   # 仅唯一匹配才关联,避免同号多张牌错绑
+        user.card_id = cards[0].id
         return True
     return False
 

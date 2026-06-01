@@ -21,6 +21,6 @@ def save_image(file_storage):
         raise ValueError("仅支持 png/jpg/jpeg/webp/gif")
     upload_dir = current_app.config["UPLOAD_DIR"]
     os.makedirs(upload_dir, exist_ok=True)
-    name = f"{int(time.time())}_{uuid.uuid4().hex[:8]}.{ext}"
-    file_storage.save(os.path.join(upload_dir, secure_filename(name)))
+    name = secure_filename(f"{int(time.time())}_{uuid.uuid4().hex[:8]}.{ext}")
+    file_storage.save(os.path.join(upload_dir, name))
     return f"/api/uploads/{name}"
