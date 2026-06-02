@@ -200,6 +200,9 @@ def set_user_status(uid):
     if st not in ("pending", "approved", "rejected"):
         return fail(ERR_PARAM, "status 仅支持 pending/approved/rejected")
     u.status = st
+    # 拒绝/打回待审即时吊销其登录态:自增 token_version 使现有 token 失效
+    if st in ("rejected", "pending"):
+        u.token_version = (u.token_version or 0) + 1
     db.session.commit()
     return ok({"id": u.id, "status": u.status})
 

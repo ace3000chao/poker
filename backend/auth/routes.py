@@ -268,6 +268,9 @@ def refresh():
     user = User.query.get(int(payload["sub"]))
     if user is None:
         return fail(ERR_REFRESH_INVALID)
+    # 令牌版本比对:登出/封号后旧 refresh token 一并失效,无法再换新 access
+    if payload.get("tv", 0) != (user.token_version or 0):
+        return fail(ERR_REFRESH_INVALID)
 
     access = issue_access_token(user)
     from datetime import datetime
@@ -279,6 +282,23 @@ def refresh():
         "access_token": access,
         "expires_in": int(current_app.config["JWT_ACCESS_EXPIRES"].total_seconds()),
     })
+
+
+@auth_bp.post("/logout")
+@require_auth
+def logout():
+    """登出:自增 token_version,使该用户已签发的所有 access/refresh token 立即失效。
+
+    清掉 jwt_* 缓存列;前端同时丢弃本地 token。封号(拒绝审核)也走同一吊销机制。
+    """
+    user = g.current_user
+    user.token_version = (user.token_version or 0) + 1
+    user.jwt_token = None
+    user.jwt_expires_at = None
+    user.jwt_refresh_token = None
+    user.jwt_refresh_expires_at = None
+    db.session.commit()
+    return ok({"logged_out": True})
 
 
 @user_bp.get("/profile")

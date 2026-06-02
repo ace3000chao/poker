@@ -2,6 +2,7 @@
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import GameCard from '../components/GameCard'
+import { showToast as notify } from '../components/Toast'
 
 const SUITS = ['S', 'H', 'C', 'D']
 const SUIT_SYMBOLS = { S: '♠', H: '♥', C: '♣', D: '♦' }
@@ -399,7 +400,7 @@ export default function Klondike() {
     const timeBonus = isWin ? Math.max(0, Math.floor((300 - elapsed) / 10)) : 0
     const score = baseScore + stepBonus + timeBonus
     try {
-      await api.gameScore('klondike', {
+      const _r = await api.gameScore('klondike', {
         score,
         duration: elapsed,
         timestamp: new Date().toISOString(),
@@ -408,8 +409,9 @@ export default function Klondike() {
         draw_mode: drawMode,
         stock_resets: stockResets,
       })
+      notify(`积分 +${_r.earned_points} · 总分 ${_r.total_points} · 第 ${_r.rank} 名`, 'success')
     } catch (e) {
-      console.error('Score submission failed:', e)
+      notify(e?.message || '成绩上报失败,请检查网络后重试', 'error')
     }
   }, [moves, elapsed, drawMode, stockResets])
 

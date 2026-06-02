@@ -41,7 +41,9 @@ export default function Profile() {
     }
   }
 
-  function logout() {
+  async function logout() {
+    // 通知后端吊销 token(失败也无妨,本地照常清);随后清本地态跳首页
+    try { await api.logout() } catch { /* 忽略:网络/已失效 */ }
     clearAuth()
     nav('/')
   }

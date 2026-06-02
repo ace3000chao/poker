@@ -2,6 +2,7 @@
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import GameCard from '../components/GameCard'
+import { showToast as notify } from '../components/Toast'
 
 const SUITS = ['S', 'H', 'C', 'D']
 const SUIT_SYMBOLS = { S: '♠', H: '♥', C: '♣', D: '♦' }
@@ -415,7 +416,7 @@ const handleStart = useCallback(() => {
     const score = baseScore + moveBonus + timeBonus
     const fcAvg = totalFreecellOps > 0 ? freecellUsage / totalFreecellOps : 0
     try {
-      await api.gameScore('freecell', {
+      const _r = await api.gameScore('freecell', {
         score,
         duration: elapsed,
         timestamp: new Date().toISOString(),
@@ -423,8 +424,9 @@ const handleStart = useCallback(() => {
         moves,
         freecell_usage_avg: fcAvg,
       })
+      notify(`积分 +${_r.earned_points} · 总分 ${_r.total_points} · 第 ${_r.rank} 名`, 'success')
     } catch (e) {
-      console.error('Score submission failed:', e)
+      notify(e?.message || '成绩上报失败,请检查网络后重试', 'error')
     }
   }, [moves, elapsed, freecellUsage, totalFreecellOps])
 

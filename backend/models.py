@@ -37,6 +37,9 @@ class User(db.Model):
     jwt_expires_at = db.Column(db.DateTime, nullable=True)
     jwt_refresh_token = db.Column(db.Text, nullable=True)
     jwt_refresh_expires_at = db.Column(db.DateTime, nullable=True)
+    # 令牌版本:登出 / 封号时自增。签发的 JWT 内嵌 tv,校验时比对,
+    # 不一致即视为已吊销 —— 让无状态 JWT 具备「立即失效」能力。
+    token_version = db.Column(db.Integer, nullable=False, default=0, server_default="0")
     created_at = db.Column(db.DateTime, default=_now)
     updated_at = db.Column(db.DateTime, default=_now, onupdate=_now)
     last_login_at = db.Column(db.DateTime, nullable=True)

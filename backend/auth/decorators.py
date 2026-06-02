@@ -35,6 +35,9 @@ def require_auth(fn):
         user = User.query.get(int(payload["sub"]))
         if user is None:
             return fail(ERR_UNAUTHORIZED)
+        # 令牌版本比对:登出/封号后 token_version 自增,旧 token 即失效(已吊销)
+        if payload.get("tv", 0) != (user.token_version or 0):
+            return fail(ERR_UNAUTHORIZED)
         g.current_user = user
         return fn(*args, **kwargs)
 
