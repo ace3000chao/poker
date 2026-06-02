@@ -21,6 +21,7 @@ def issue_access_token(user):
         "phone": user.phone,
         "role": user.role,
         "type": "access",
+        "tv": user.token_version or 0,  # 令牌版本,用于吊销
         "iat": iat,
         "exp": iat + cfg["JWT_ACCESS_EXPIRES"],
     }
@@ -33,6 +34,7 @@ def issue_refresh_token(user):
     payload = {
         "sub": str(user.id),
         "type": "refresh",
+        "tv": user.token_version or 0,  # 令牌版本,用于吊销
         "iat": iat,
         "exp": iat + cfg["JWT_REFRESH_EXPIRES"],
     }

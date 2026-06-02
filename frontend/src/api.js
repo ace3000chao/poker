@@ -149,6 +149,8 @@ export const api = {
     request('/auth/reset-password', {
       method: 'POST', body: { phone, code, new_password },
     }),
+  // 登出:通知后端吊销当前 token(自增 token_version),再由调用方清本地态
+  logout: () => request('/auth/logout', { method: 'POST', auth: true }),
   profile: () => request('/user/profile', { auth: true }),
   updateMyCard: (payload) =>
     request('/user/card', { method: 'PUT', body: payload, auth: true }),

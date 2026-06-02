@@ -411,7 +411,7 @@ export default function Admin() {
       <header className="bg-school text-white px-4 py-3 flex items-center gap-3">
         <img src="/logo-zspt-white.png" alt="logo" className="h-6 object-contain" />
         <span className="text-sm font-bold border-l border-white/30 pl-3">管理后台</span>
-        <button onClick={() => { clearAuth(); setAuthed(false) }}
+        <button onClick={async () => { try { await api.logout() } catch { /* 忽略 */ } clearAuth(); setAuthed(false) }}
           className="ml-auto text-xs bg-white/15 px-3 py-1 rounded-full">退出</button>
       </header>
       <nav className="bg-white flex overflow-x-auto border-b border-school/10 text-sm">

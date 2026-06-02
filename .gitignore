@@ -27,3 +27,10 @@ dist/
 
 # Project-local private instructions
 CLAUDE.local.md
+
+# Claude Code local working dir
+.claude/
+
+# 校友源数据(含真实手机号,禁止入库;仅本地导入用)
+docs/name.xlsx
+*.xlsx

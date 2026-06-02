@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import GameCard from '../components/GameCard'
+import { showToast as notify } from '../components/Toast'
 
 const SUIT_SYMBOLS = { S: '?', H: '?', C: '?', D: '?' }
 const RANK_LABELS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
@@ -377,7 +378,7 @@ export default function SpiderSolitaire() {
   const submitScore = useCallback(async (isWin) => {
     const score = completed * 100 + Math.max(0, 600 - elapsed) * 2
     try {
-      await api.gameScore('spider_solitaire', {
+      const _r = await api.gameScore('spider_solitaire', {
         score,
         duration: elapsed,
         timestamp: new Date().toISOString(),
@@ -385,8 +386,9 @@ export default function SpiderSolitaire() {
         completed_sequences: completed,
         moves,
       })
+      notify(`积分 +${_r.earned_points} · 总分 ${_r.total_points} · 第 ${_r.rank} 名`, 'success')
     } catch (e) {
-      console.error('Score submission failed:', e)
+      notify(e?.message || '成绩上报失败,请检查网络后重试', 'error')
     }
   }, [completed, elapsed, moves])
 

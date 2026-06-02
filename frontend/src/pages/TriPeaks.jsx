@@ -2,6 +2,7 @@
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import GameCard from '../components/GameCard'
+import { showToast as notify } from '../components/Toast'
 
 const SUITS = ['S', 'H', 'C', 'D']
 const SUIT_SYMBOLS = { S: '♠', H: '♥', C: '♣', D: '♦' }
@@ -202,7 +203,9 @@ const handleStart = useCallback(() => {
       chain_max: chainMax,
       stock_used: stockUsed,
       cards_cleared: cardsCleared,
-    }).catch(e => console.error('Score submission failed:', e))
+    })
+      .then(_r => notify(`积分 +${_r.earned_points} · 总分 ${_r.total_points} · 第 ${_r.rank} 名`, 'success'))
+      .catch(e => notify(e?.message || '成绩上报失败,请检查网络后重试', 'error'))
   }, [cardsCleared, chainBonusTotal, stock, elapsed, chainMax, stockUsed])
 
   useEffect(() => {
